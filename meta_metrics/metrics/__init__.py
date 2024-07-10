@@ -1,2 +1,2 @@
-from meta_metrics.metrics.bert_score import *
-from meta_metrics.metrics.base_metric import *
+from .base_metric import *
+from .bert_score_metric import *

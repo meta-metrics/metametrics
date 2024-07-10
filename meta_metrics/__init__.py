@@ -1,1 +1,1 @@
-from meta_metrics.meta_metrics import *
+from .meta_metrics import *

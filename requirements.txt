@@ -1,2 +1,0 @@
-bayesian-optimization
-evaluate
