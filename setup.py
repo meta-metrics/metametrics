@@ -24,8 +24,8 @@ setup(
     ],
     install_requires=[
         "bayesian-optimization",
-        "evaluate",
+        "evaluate==0.4.0",
         "scipy"
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.10",
 )
