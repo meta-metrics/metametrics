@@ -25,7 +25,16 @@ setup(
     install_requires=[
         "bayesian-optimization",
         "evaluate==0.4.0",
-        "scipy"
+        "scipy",
+        "transformers==4.42.3",
+        "sentencepiece",
+        "sacrebleu==2.4.2",
+        "unbabel-comet==2.2.2",
+        "pandas",
+        "numpy",
+        "tensorflow",
+        "torch",
+        "tf-slim>=1.1"
     ],
     python_requires=">=3.10",
 )
