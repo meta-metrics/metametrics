@@ -2,7 +2,7 @@ from bayes_opt import BayesianOptimization
 from scipy import stats
 from typing import List, Tuple
 
-from meta_metrics.metrics.bert_score_metric import BERTScoreMetric
+from meta_metrics.metrics import BERTScoreMetric
 
 class MetaMetrics:
     """
