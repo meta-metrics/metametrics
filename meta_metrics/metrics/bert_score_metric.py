@@ -8,7 +8,6 @@ class BERTScoreMetric(BaseMetric):
             metric_args (Dict): a dictionary of metric arguments
     """
     def __init__(self, metric_args:Dict):
-        print("haha")
         self.hf_metric = load("bertscore")
         self.model_name = metric_args["model_name"]
         self.model_metric = metric_args["model_metric"]
