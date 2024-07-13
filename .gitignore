@@ -212,3 +212,8 @@ ENV/
 /site
 
 # End of https://www.gitignore.io/api/macos,linux,django,python,pycharm
+
+# Additional folders
+
+BLEURT-20
+*.zip
