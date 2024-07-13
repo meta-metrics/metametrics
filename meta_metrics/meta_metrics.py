@@ -2,9 +2,9 @@ from bayes_opt import BayesianOptimization
 from scipy import stats
 from typing import List, Tuple
 
-from meta_metrics.metrics.bert_score_metric import BERTScoreMetric
-from meta_metrics.metrics.bleurt20_metric import BLEURT20Metric
-from meta_metrics.metrics.comet_metric import COMETMetric
+from meta_metrics.metrics import BERTScoreMetric
+from meta_metrics.metrics import BLEURT20Metric
+from meta_metrics.metrics import COMETMetric
 
 class MetaMetrics:
     """
