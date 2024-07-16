@@ -119,11 +119,11 @@ class MetricXMetric(BaseMetric):
 
         with open(args.output_file, "w") as out:
             for pred, example in zip(predictions, ds["test"]):
-            example["prediction"] = float(pred)
-            del example["input"]
-            del example["input_ids"]
-            del example["attention_mask"]
-            out.write(json.dumps(example) + "\n")
+                example["prediction"] = float(pred)
+                del example["input"]
+                del example["input_ids"]
+                del example["attention_mask"]
+                out.write(json.dumps(example) + "\n")
 
 
         

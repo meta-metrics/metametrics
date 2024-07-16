@@ -34,10 +34,12 @@ setup(
         "numpy",
         "tensorflow",
         "torch",
+        "torchvision",
         "tf-slim>=1.1",
         "bert_score",
         'regex',
-        'six'
+        'six',
+        "gdown"
     ],
     python_requires=">=3.10",
 )
