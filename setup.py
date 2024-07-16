@@ -39,7 +39,9 @@ setup(
         "bert_score",
         'regex',
         'six',
-        "gdown"
+        "gdown",
+        "huggingface-hub",
+        "scikit-learn"
     ],
     python_requires=">=3.10",
 )
