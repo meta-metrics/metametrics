@@ -35,7 +35,9 @@ setup(
         "tensorflow",
         "torch",
         "tf-slim>=1.1",
-        "bert_score"
+        "bert_score",
+        'regex',
+        'six'
     ],
     python_requires=">=3.10",
 )
