@@ -5,6 +5,7 @@ from typing import List, Tuple
 from meta_metrics.metrics import BERTScoreMetric
 from meta_metrics.metrics import BLEURT20Metric
 from meta_metrics.metrics import COMETMetric
+from meta_metrics.metrics import YiSiMetric
 
 class MetaMetrics:
     """
@@ -35,6 +36,8 @@ class MetaMetrics:
                 metric = COMETMetric(comet_model="Unbabel/XCOMET-XXL", **metric_args)
             elif metric_name == "cometkiwi":
                 metric = COMETMetric(comet_model="Unbabel/wmt22-cometkiwi-da", **metric_args)
+            elif metric_name == "yisi":
+                metric = YiSiMetric(**metric_args)
             self.metrics.append(metric)
 
     def score(self, predictions:List[str], references:List[str]) -> List[float]:
