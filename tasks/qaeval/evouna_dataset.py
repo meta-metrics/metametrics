@@ -41,6 +41,26 @@ class EVOUNA_Dataset:
                 proper_list.append(data_entry)
 
         return proper_list, improper_list
+    
+    @staticmethod
+    def gold_answer_format(answer):
+        if '/' in answer:
+            return answer.split('/')
+        
+        if ' or ' in answer:
+            return answer.split(' or ')
+        
+        return [answer]
+    
+    @staticmethod
+    def to_int_with_exception(bool):
+        if bool is None:
+            return -1
+        
+        if bool:
+            return 1
+        
+        return 0
     # End of Helper Methods
 
     def __init__(self, dataset_name):
@@ -64,7 +84,15 @@ class EVOUNA_Dataset:
         """
         Load the specified dataset.
         """
-        return pd.DataFrame(self.data)
+        
+        df = pd.DataFrame(self.data)
+        df = df.fillna("")
+        df['golden_answer'] = df['golden_answer'].apply(EVOUNA_Dataset.gold_answer_format)
+
+        for model in ['fid', 'gpt35', 'chatgpt', 'gpt4', 'newbing']:
+            df[f'judge_{model}'] = df[f'judge_{model}'].apply(EVOUNA_Dataset.to_int_with_exception)
+
+        return df
 
     def preprocess_dataset(self):
         """
