@@ -34,8 +34,10 @@ setup(
         "numpy",
         "tensorflow",
         "torch",
+        "torchvision",
         "tf-slim>=1.1",
-        "bert_score"
+        "bert_score",
+        "gdown"
     ],
     python_requires=">=3.10",
 )
