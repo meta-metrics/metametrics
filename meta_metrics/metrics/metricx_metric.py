@@ -53,15 +53,16 @@ class MetricXMetric(BaseMetric):
             args=self.training_args,
         )
 
-    def get_dataset(self, sources, hypothesis, references, max_input_length: int, device, is_qe: bool):
+    def get_dataset(self, sources:Union[List[str], None], hypothesis:List[str], references:List[str], max_input_length: int, device, is_qe: bool):
         """Gets the test dataset for prediction.
 
         If `is_qe` is true, the input data must have "hypothesis" and "source" fields.
         If it is false, there must be "hypothesis" and "reference" fields.
 
         Args:
-            input_file: The path to the jsonl input file.
-            tokenizer: The tokenizer to use.
+            sources: a list of sources
+            hypothesis: a list of hypothesis
+            references: a list of gold references
             max_input_length: The maximum input sequence length.
             device: The ID of the device to put the PyTorch tensors on.
             is_qe: Indicates whether the metric is a QE metric or not.
