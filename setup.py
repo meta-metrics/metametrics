@@ -41,7 +41,13 @@ setup(
         'six',
         "gdown",
         "huggingface-hub",
-        "scikit-learn"
+        "scikit-learn",
+        # GEMBA Requirements
+        "openai>=1.0.0",
+        "termcolor",
+        "pexpect",
+        "ipdb",
+        "absl-py"
     ],
     python_requires=">=3.10",
 )
