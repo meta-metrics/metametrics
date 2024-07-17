@@ -122,6 +122,6 @@ class MetricXMetric(BaseMetric):
             self.metric_args["device"],
             is_qe=self.reference_free
         )
-  
+ 
         predictions, _, _ = self.trainer.predict(test_dataset=ds["test"])
         return predictions
