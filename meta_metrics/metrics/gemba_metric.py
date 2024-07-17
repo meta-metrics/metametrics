@@ -8,6 +8,10 @@ from .base_metric import BaseMetric
 
 class GEMBA_MQM(BaseMetric):
     """
+        IMPORTANT!
+            Before using GEMBA_MQM, go to the GEMBA/gemba submodule and edit the CREDENTIALS.py.
+            You require an API key from OpenAI to utilize this metric.
+            Furthermore, to use other models, you must add entries to CREDENTIALS.py's deployments entry.
         args:
             verbose (bool): defaults to False, set to True to test output results.
 
