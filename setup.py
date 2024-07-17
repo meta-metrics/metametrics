@@ -39,7 +39,15 @@ setup(
         "bert_score",
         'regex',
         'six',
-        "gdown"
+        "gdown",
+        "huggingface-hub",
+        "scikit-learn",
+        # GEMBA Requirements
+        "openai>=1.0.0",
+        "termcolor",
+        "pexpect",
+        "ipdb",
+        "absl-py"
     ],
     python_requires=">=3.10",
 )
