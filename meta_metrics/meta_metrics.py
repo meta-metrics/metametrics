@@ -3,6 +3,8 @@ from scipy import stats
 from typing import List, Tuple
 
 from meta_metrics.metrics import BERTScoreMetric
+from meta_metrics.metrics import BLEURT20Metric
+from meta_metrics.metrics import COMETMetric
 
 class MetaMetrics:
     """
@@ -24,7 +26,15 @@ class MetaMetrics:
             metric_args = metric_config[1]
 
             if metric_name == "bertscore":
-                metric = BERTScoreMetric(metric_args)
+                metric = BERTScoreMetric(**metric_args)
+            elif metric_name == "bleurt":
+                metric = BLEURT20Metric()
+            elif metric_name == "comet":
+                metric = COMETMetric(comet_model="Unbabel/wmt22-comet-da", **metric_args)
+            elif metric_name == "xcomet":
+                metric = COMETMetric(comet_model="Unbabel/XCOMET-XXL", **metric_args)
+            elif metric_name == "cometkiwi":
+                metric = COMETMetric(comet_model="Unbabel/wmt22-cometkiwi-da", **metric_args)
             self.metrics.append(metric)
 
     def score(self, predictions:List[str], references:List[str]) -> List[float]:
