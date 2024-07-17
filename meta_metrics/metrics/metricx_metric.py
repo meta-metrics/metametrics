@@ -1,17 +1,25 @@
-# limitations under the License.
-"""Model classes for MetricX, modified from the T5 versions in HF."""
-
-from typing import Dict, List
 from .base_metric import BaseMetric
-
-import dataclasses
-import json
-import os
-
-import datasets
 from .utils.metricx import *
+from torch.utils.data import Dataset
+from typing import Dict, List
 import torch
 import transformers
+
+class MetricXDataset(Dataset):
+
+    def __init__(self, sources, hypothesis, references):
+        self.sources = sources
+        self.hypothesis = hypothesis
+        self.references = references
+
+    def __getitem__(self, index):
+        if self.sources != None:
+            return self.predictions[index], self.references[index], self.source[index]
+        else:
+            return self.predictions[index], self.references[index]
+
+    def __len__(self):
+        return len(self.sources)
 
 class MetricXMetric(BaseMetric):
     """
@@ -45,7 +53,7 @@ class MetricXMetric(BaseMetric):
             args=self.training_args,
         )
 
-    def get_dataset(self, input_file: str, tokenizer, max_input_length: int, device, is_qe: bool):
+    def get_dataset(self, sources, hypothesis, references, max_input_length: int, device, is_qe: bool):
         """Gets the test dataset for prediction.
 
         If `is_qe` is true, the input data must have "hypothesis" and "source" fields.
@@ -80,7 +88,7 @@ class MetricXMetric(BaseMetric):
             return example
 
         def _tokenize(example):
-            return tokenizer(
+            return self.tokenizer(
                 example["input"],
                 max_length=max_input_length,
                 truncation=True,
@@ -92,7 +100,7 @@ class MetricXMetric(BaseMetric):
             example["attention_mask"] = example["attention_mask"][:-1]
             return example
 
-        ds = datasets.load_dataset("json", data_files={"test": input_file})
+        ds = MetricXDataset(sources, hypothesis, references)
         ds = ds.map(_make_input)
         ds = ds.map(_tokenize)
         ds = ds.map(_remove_eos)
@@ -104,26 +112,16 @@ class MetricXMetric(BaseMetric):
         )
         return ds
 
-    def score(self, predictions:List[str], references:List[List[str]]) -> List[float]:
-        
+    def score(self, predictions:List[str], references:List[List[str]], sources:List[str]=None) -> List[float]:
         ds = self.get_dataset(
-            args.input_file,
-            tokenizer,
-            args.max_input_length,
-            device,
-            args.qe,
+            sources,
+            predictions,
+            references,
+            self.tokenizer,
+            self.metric_args["max_input_length"],
+            self.metric_args["device"],
+            is_qe=self.reference_free
         )
-  
-        predictions, _, _ = trainer.predict(test_dataset=ds["test"])
-
-
-        with open(args.output_file, "w") as out:
-            for pred, example in zip(predictions, ds["test"]):
-                example["prediction"] = float(pred)
-                del example["input"]
-                del example["input_ids"]
-                del example["attention_mask"]
-                out.write(json.dumps(example) + "\n")
-
-
-        
+ 
+        predictions, _, _ = self.trainer.predict(test_dataset=ds["test"])
+        return predictions
