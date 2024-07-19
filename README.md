@@ -12,6 +12,5 @@ Python 3.10 or higher. Details of dependencies are in `setup.py`.
 
 ## Setup Instruction
 
-1. Run `setup.sh`. The script will automatically install required dependencies and prompt a hugging-face token.
-Otherwise, user can either provide hugging-face token in configuration directly or set it up as an environment variable in HF_TOKEN.
-
+1. Run `pip install .` as it will automatically install required dependencies.
+2. Provide hugging-face token by setting as an environment variable in HF_TOKEN.
