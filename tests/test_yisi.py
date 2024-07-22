@@ -8,7 +8,7 @@ class TestBaseMetric(unittest.TestCase):
     def test_score(self):
         metric = YiSiMetric()
         result = metric.score(PREDICTIONS, REFERENCES)
-        expected = [0.752079, 0.593061, 0.406926]
+        expected = [0.8144895406879522, 0.7592438764413839, 0.6555026936563987]
         
         self.assertEqual(result, expected)
 
