@@ -1,69 +1,104 @@
-import os
-import gdown
-import gzip
-import shutil
-import logging
-
-from typing import List, Union
+from typing import List, Union, Dict, Tuple
 from .base_metric import BaseMetric
+import torch
+from transformers import AutoTokenizer, AutoModel
+import numpy as np
+
+class YiSiGraph:
+    def __init__(self, ref: str, hyp: str, model_name: str = 'bert-base-multilingual-cased'):
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModel.from_pretrained(model_name)
+        self.model.eval()
+        
+        self.ref = ref
+        self.hyp = hyp
+        
+        self.ref_embedding = self._get_token_embeddings(ref)
+        self.hyp_embedding = self._get_token_embeddings(hyp)
+
+    def _get_token_embeddings(self, text: str) -> torch.Tensor:
+        inputs = self.tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=128)
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+        token_embeddings = outputs.last_hidden_state.squeeze(0)  # shape (sequence_length, hidden_size)
+        return token_embeddings
+
+    def _cosine_similarity(self, vec1: torch.Tensor, vec2: torch.Tensor) -> float:
+        return torch.nn.functional.cosine_similarity(vec1.unsqueeze(0), vec2.unsqueeze(0)).item()
+
+    def get_token_similarities(self) -> List[List[float]]:
+        similarities = []
+        for ref_emb in self.ref_embedding:
+            ref_sims = []
+            for hyp_emb in self.hyp_embedding:
+                sim = self._cosine_similarity(ref_emb, hyp_emb)
+                ref_sims.append(sim)
+            similarities.append(ref_sims)
+        return similarities
 
 class YiSiMetric(BaseMetric):
-    """
-        args:
-            metric_args (Dict): a dictionary of metric arguments
-    """
-    def __init__(self, **kwargs):
-        self.l1 = 'en'
-        self.l2 = 'en'
-        cur_dir = os.path.dirname(os.path.abspath(__file__))
-        self.yisi_home = os.path.join(cur_dir, "yisi")
-        self.yisi_model = os.path.join(self.yisi_home, "w2v_model.bin")
-        if not os.path.exists(self.yisi_model):
-            # Download Word2Vec Model
-            gzip_file = os.path.join(self.yisi_home, "w2v_model.bin.gz")
-            logging.info("Word2Vec Model not Found")
-            gdown.download("https://drive.usercontent.google.com/open?id=0B7XkCwpI5KDYNlNUTTlSS21pQmM", gzip_file)
-            with gzip.open(gzip_file, 'rb') as f_in:
-                with open(self.yisi_model, 'wb') as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-            os.remove(gzip_file)
-        self.yisi_bin = os.path.join(self.yisi_home, 'bin/yisi')
-        self.temp_folder = '/tmp/yisitmp'
-        os.makedirs(self.temp_folder, exist_ok=True)
-        
+    def __init__(self, model_name: str = 'bert-base-multilingual-cased', alpha: float = 0.8):
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModel.from_pretrained(model_name)
+        self.model.eval()
+        self.model_name = model_name
+        self.alpha = alpha
 
-    def score(self, predictions: List[str], references: List[str], sources: Union[None, List[List[str]]]=None) -> List[float]:
-        temp_file_ref_path = os.path.join(self.temp_folder, "temp_ref.en")
-        temp_file_hyp_path = os.path.join(self.temp_folder, "temp_hyp.en")
-        temp_file_sntscore_path = os.path.join(self.temp_folder, "temp_hyp.sntyisi1")
-        temp_file_docscore_path = os.path.join(self.temp_folder, "temp_hyp.docyisi1")
-        temp_file_config = os.path.join(self.temp_folder, "yisi.config")
-        with open(temp_file_ref_path, 'w+') as f:
-            for sent in references:
-                f.write(sent + '\n')
-        with open(temp_file_hyp_path, 'w+') as f:
-            for sent in predictions:
-                f.write(sent + '\n')
+    def _compute_idf(self, documents: List[str]) -> Dict[str, float]:
+        idf = {}
+        total_docs = len(documents)
+        all_words = set(word for sentence in documents for word in self.tokenizer.tokenize(sentence))
+        for word in all_words:
+            count = sum(1 for sentence in documents if word in self.tokenizer.tokenize(sentence))
+            idf[word] = np.log((total_docs + 1) / (count + 1)) + 1
+        return idf
+
+    def _compute_features(self, prediction: str, reference: str, idf_weights: Dict[str, float]) -> Tuple[float, float]:
+        yisigraph = YiSiGraph(reference, prediction, self.model_name)
+        token_similarities = yisigraph.get_token_similarities()
+
+        precision = 0.0
+        recall = 0.0
+
+        pred_tokens = self.tokenizer.tokenize(prediction)
+        ref_tokens = self.tokenizer.tokenize(reference)
         
-        cfg_string = f"""srclang={self.l1}
-tgtlang={self.l2}
-lexsim-type=w2v
-outlexsim-path={self.yisi_model}
-reflexweight-type=learn
-phrasesim-type=nwpr
-ngram-size=3
-mode=yisi
-alpha=0.8
-ref-file={temp_file_ref_path}
-hyp-file={temp_file_hyp_path}
-sntscore-file={temp_file_sntscore_path}
-docscore-file={temp_file_docscore_path}"""
-        with open(temp_file_config, 'w+') as f:
-            f.write(cfg_string)
-        status = os.system(f"{self.yisi_bin} --config {temp_file_config}")
-        if status != 0:
-            raise ValueError('yisi failed to run')
-        else:
-            with open(temp_file_sntscore_path, 'r') as f:
-                scores = [float(line.strip()) for line in  f.readlines()]
-                return scores
+        weight_pred = 0
+        weight_ref = 0
+
+        # Compute precision
+        for i, pred_token in enumerate(pred_tokens):
+            max_weighted_sim = 0
+            for j, ref_token in enumerate(ref_tokens):
+                weighted_sim = token_similarities[j][i] * idf_weights.get(pred_token, 0)
+                if weighted_sim > max_weighted_sim:
+                    max_weighted_sim = weighted_sim
+            weight_pred += idf_weights.get(pred_token, 0)
+            precision += max_weighted_sim
+        
+        # Compute recall
+        for j, ref_token in enumerate(ref_tokens):
+            max_weighted_sim = 0
+            for i, pred_token in enumerate(pred_tokens):
+                weighted_sim = token_similarities[j][i] * idf_weights.get(ref_token, 0)
+                if weighted_sim > max_weighted_sim:
+                    max_weighted_sim = weighted_sim
+            weight_ref += idf_weights.get(ref_token, 0)
+            recall += max_weighted_sim
+        
+        precision /= weight_pred if weight_pred > 0 else 1
+        recall /= weight_ref if weight_ref > 0 else 1
+        
+        return precision, recall
+
+    def score(self, predictions: List[str], references: List[str], sources: Union[None, List[str]]=None) -> List[float]:
+        idf_weights = self._compute_idf(predictions + references)
+        
+        scores = []
+        for pred, ref in zip(predictions, references):
+            precision, recall = self._compute_features(pred, ref, idf_weights)
+            
+            score = (precision * recall) / (self.alpha * precision + (1 - self.alpha) * recall)
+            scores.append(score)
+        
+        return scores
