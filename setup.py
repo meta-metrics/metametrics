@@ -13,6 +13,9 @@ class SetupInstallCommand(install):
     user_options = []
 
     def run(self):
+        # Get original working directory
+        owd = os.getcwd()
+
         # Navigate to the meta_metrics/metrics directory
         os.chdir('meta_metrics/metrics')
 
@@ -33,11 +36,34 @@ class SetupInstallCommand(install):
                 logging.error("Failed to install BLEURT.")
                 logging.error(result.stderr.decode())
                 return
+            os.chdir('..')
         else:
             logging.info("Skipping BLEURT installation as BLEURT already exists.")
 
+
+        # reset working directory
+        os.chdir(owd)
+        
+        # Navigate to the task/mteval
+        os.chdir('task/mteval')
+        if not os.path.isdir('mt-metrics-eval'):
+            logging.info("Cloning mt-metrics-eval ...")
+            subprocess.run(["git", "clone", "https://github.com/google-research/mt-metrics-eval.git"])
+            os.chdir("mt-metrics-eval")
+            logging.info("Installing mt-metrics-eval ...")
+            result = subprocess.run(["pip", "install", "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logging.info("mt-metrics-eval installed successfully.")
+            else:
+                logging.error("Failed to install  mt-metrics-eval .")
+                logging.error(result.stderr.decode())
+                return
+        
+        os.chdir(owd)
+        
         # Run the standard install process
         install.run(self)
+        
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()

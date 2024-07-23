@@ -113,3 +113,4 @@ class MetaMetrics:
                 metric_name = self.metrics_configs[i][0]
                 self.weights.append(optimizer.max["params"][metric_name])
             print("weights:", self.weights)
+            return self.weights

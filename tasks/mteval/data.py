@@ -77,11 +77,12 @@ class MTMEDataLoader:
             else:
                 print("Missing MQM or WMT-RAW score")
                 print(eval_set.name, eval_set.lp, sys_name)
-            g_keys.append(keys)
-            g_outputs.append(outputs)
-            g_references.append(references)
-            g_scores.append(scores)
-            g_src.append(src)
+            if len(keys):
+                g_keys.append(keys)
+                g_outputs.append(outputs)
+                g_references.append(references)
+                g_scores.append(scores)
+                g_src.append(src)
         return g_keys, g_src, g_outputs, g_references, g_scores
 
 
