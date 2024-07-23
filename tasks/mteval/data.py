@@ -34,27 +34,31 @@ class MTMEDataLoader:
                         raise ValueError(f"Language pair '{lang_pair}' not found in test set '{test_set}' in meta_info.DATA.")
 
     def load_data(self):
-        split_data = {'train': {"output": [], "reference": [], "score": []},
-                      'dev': {"output": [], "reference": [], "score": []},
-                      'test': {"output": [], "reference": [], "score": []}}
+        split_data = {'train': {"output": [], "reference": [], "score": [], 'source': [], 'key': []},
+                      'dev': {"output": [], "reference": [], "score": [], 'source': [], 'key': []},
+                      'test': {"output": [], "reference": [], "score": [], 'source': [], 'key': []},
+                     }
 
         for split, datasets in self.split_dict.items():
             for test_set, lang_pairs in datasets.items():
                 for lang_pair in lang_pairs:
                     eval_set = data.EvalSet(name=test_set, lp=lang_pair, path=self.data_path)
-                    outputs, references, scores = self._load_data_from_evalset(eval_set)
+                    keys, sources, outputs, references, scores = self._load_data_from_evalset(eval_set)
                     split_data[split]["output"].extend(outputs)
                     split_data[split]["reference"].extend(references)
                     split_data[split]["score"].extend(scores)
+                    split_data[split]["source"].extend(sources)
+                    split_data[split]["key"].extend(keys)
+                    
         
         return split_data
 
     def _load_data_from_evalset(self, eval_set):
-        g_outputs, g_references, g_scores = [], [], []
+        g_keys, g_src, g_outputs, g_references, g_scores = [], [], [], [], []
         systems = eval_set.sys_outputs.keys()
         
         for sys_name in systems:
-            outputs, references, scores = [], [], []
+            keys, src, outputs, references, scores = [], [], [], [], []
             sys_outputs = eval_set.sys_outputs[sys_name]
             if sys_name in eval_set.human_sys_names:
                 continue
@@ -67,15 +71,18 @@ class MTMEDataLoader:
                         if score[sys_name][i] is not None:
                             outputs.append(sys_outputs[i])
                             references.append(eval_set.all_refs[eval_set.std_ref][i])
+                            src.append(eval_set.src[i])
                             scores.append(score[sys_name][i])
+                            keys.append(eval_set.name + '&' + eval_set.lp + '&' + sys_name)
             else:
                 print("Missing MQM or WMT-RAW score")
                 print(eval_set.name, eval_set.lp, sys_name)
-
+            g_keys.append(keys)
             g_outputs.append(outputs)
             g_references.append(references)
             g_scores.append(scores)
-        return g_outputs, g_references, g_scores
+            g_src.append(src)
+        return g_keys, g_src, g_outputs, g_references, g_scores
 
 
 if __name__ == "__main__":
