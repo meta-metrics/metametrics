@@ -36,22 +36,6 @@ class SetupInstallCommand(install):
         else:
             logging.info("Skipping BLEURT installation as BLEURT already exists.")
 
-        # Clone YiSi repository if it doesn't exist
-        if not os.path.isdir('yisi'):
-            logging.info("Cloning YiSi repository ...")
-            subprocess.run(["git", "clone", "https://github.com/davidanugraha/yisi.git"])
-            os.chdir('yisi/src')
-            logging.info("Installing YiSi ...")
-            result = subprocess.run(["make", "all", "-j", "8"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.returncode == 0:
-                logging.info("YiSi installed successfully.")
-            else:
-                logging.error("Failed to install YiSi.")
-                logging.error(result.stderr.decode())
-                return
-        else:
-            logging.info("Skipping YiSi installation as YiSi already exists.")
-        
         # Run the standard install process
         install.run(self)
 
