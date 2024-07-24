@@ -2,7 +2,7 @@ import csv
 from datasets import load_dataset
 from meta_metrics import MetaMetrics
 
-def run(dataset, metrics):
+def run(datasets, metrics):
     metric_scores = {}
     for metric_id in range(len(metrics)):
         srcs, refs, hyps = [], [], []
@@ -11,7 +11,8 @@ def run(dataset, metrics):
         
         scores = []
         for dataset in datasets:
-            for obj in dataset:
+            for i in range(len(dataset)):
+                obj = dataset[i]
                 src, ref, hyp = obj["src"], obj["ref"], obj["mt"]
                 srcs.append(src)
                 refs.append(ref)
