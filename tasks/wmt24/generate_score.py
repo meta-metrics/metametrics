@@ -57,10 +57,10 @@ if __name__ == "__main__":
 
                 for i in range(len(dataset)):
                     obj = dataset[i]
-                    obj["metric_score"] = scores[metric_name]
+                    obj["metric_score"] = float(scores[metric_name][i])
 
                     arr = []
                     for h in header:
                         arr.append(obj[h])
                     
-                    tsvwriter.writerows(arr)
+                    tsvwriter.writerow(arr)
