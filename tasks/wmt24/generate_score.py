@@ -52,8 +52,8 @@ if __name__ == "__main__":
                 tsvwriter = csv.writer(tsvfile, delimiter='\t')
                 dataset = datasets[dataset_id]
 
-                header = ["lp","src","mt","ref","metric_score","score","system","annotators","domain","year"]
-                tsvwriter.writerows(header)
+                header = ["lp","src","mt","ref","metric_score","score","raw","system","annotators","domain","year"]
+                tsvwriter.writerow(header)
 
                 for i in range(len(dataset)):
                     obj = dataset[i]
@@ -61,6 +61,9 @@ if __name__ == "__main__":
 
                     arr = []
                     for h in header:
-                        arr.append(obj[h])
+                        if h not in obj:
+                            arr.append("")
+                        else:
+                            arr.append(obj[h])
                     
                     tsvwriter.writerow(arr)
