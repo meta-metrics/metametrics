@@ -7,8 +7,7 @@ def run(dataset, metrics):
     for metric_id in range(len(metrics)):
         srcs, refs, hyps = [], [], []
         metric = metrics[metric_id]["model"]
-        src_lang = metrics[metric_id]["src_lang"]
-        tgt_lang = metrics[metric_id]["tgt_lang"]
+        metric_name = metrics[metric_id]["model_name"]
         
         scores = []
         for dataset in datasets:
@@ -18,7 +17,7 @@ def run(dataset, metrics):
                 refs.append(ref)
                 hyps.append(hyp)
 
-        scores.append(metric.score(hyps, refs, srcs, src_lang, tgt_lang))
+        scores.append(metric.score(hyps, refs, srcs))
         metric_scores[metric] = scores
     return metric_scores
     
@@ -41,14 +40,14 @@ if __name__ == "__main__":
 
     for metric_id in range(len(metrics_configs)):
         metric = MetaMetrics([metrics_configs[metric_id]], weights=[1])
-        metrics.append({"model":metric, "src_lang":None, "tgt_lang":None})
+        metrics.append({"name": metrics_configs[metric_id][0], "model":metric, "src_lang":None, "tgt_lang":None})
 
     scores = run(datasets, metrics)
     
     for dataset_id in range(len(datasets)):
-        dataset_name = dataset_names[dataset_id]
+        dataset_name = dataset_names[dataset_id].replace("/", "_")
         for metric_id in range(len(scores)):
-            metric_name = metrics_configs[metric_id][0].replace("/", "_")
+            metric_name = metrics_configs[metric_id][0]
             with open(f"{metric_name}_{dataset_name}.tsv", "w") as tsvfile:
                 tsvwriter = csv.writer(tsvfile, delimiter='\t')
                 dataset = datasets[dataset_id]
