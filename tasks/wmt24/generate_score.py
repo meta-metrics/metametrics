@@ -1,10 +1,11 @@
 import csv
 from datasets import load_dataset
 from meta_metrics import MetaMetrics
+from tqdm import tqdm
 
 def run(datasets, metrics):
     metric_scores = {}
-    for metric_id in range(len(metrics)):
+    for metric_id in tqdm(range(len(metrics))):
         srcs, refs, hyps = [], [], []
         metric = metrics[metric_id]["model"]
         metric_name = metrics[metric_id]["name"]
