@@ -22,8 +22,8 @@ class MetricXDataset(Dataset):
         return len(self.sources)
 
 class MetricXMetric(BaseMetric):
-    def __init__(self, is_qe, tokenizer_name, model_name, batch_size,
-                 max_input_length):
+    def __init__(self, is_qe: bool, tokenizer_name: str, model_name: str, batch_size: int,
+                 max_input_length: int, **kwargs):
         self.reference_free = is_qe
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer_name)
         self.model = MT5ForRegression.from_pretrained(model_name)
