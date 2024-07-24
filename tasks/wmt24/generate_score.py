@@ -13,7 +13,7 @@ def run(dataset, metrics):
         scores = []
         for dataset in datasets:
             for obj in dataset:
-                src, ref, hyp = obj["src"], obj["ref"], obj["hyp"]
+                src, ref, hyp = obj["src"], obj["ref"], obj["mt"]
                 srcs.append(src)
                 refs.append(ref)
                 hyps.append(hyp)
