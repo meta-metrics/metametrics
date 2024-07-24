@@ -44,8 +44,8 @@ class SetupInstallCommand(install):
         # reset working directory
         os.chdir(owd)
         
-        # Navigate to the task/mteval
-        os.chdir('task/mteval')
+        # Navigate to the tasks/mteval
+        os.chdir('tasks/mteval')
         if not os.path.isdir('mt-metrics-eval'):
             logging.info("Cloning mt-metrics-eval ...")
             subprocess.run(["git", "clone", "https://github.com/google-research/mt-metrics-eval.git"])
