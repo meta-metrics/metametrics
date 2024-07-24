@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     for metric_id in range(len(metrics_configs)):
         metric = MetaMetrics([metrics_configs[metric_id]], weights=[1])
-        metrics.append([metrics_configs[metric_id][0], metric])
+        metrics.append({"model":metric, "src_lang":None, "tgt_lang":None})
 
     scores = run(datasets, metrics)
     
