@@ -1,7 +1,7 @@
 from .base_metric import BaseMetric
 from .utils.metricx import *
 from torch.utils.data import Dataset
-from typing import Dict, List
+from typing import Dict, List, Union
 import torch
 import transformers
 
@@ -22,30 +22,27 @@ class MetricXDataset(Dataset):
         return len(self.sources)
 
 class MetricXMetric(BaseMetric):
-    """
-        args:
-            metric_args (Dict): a dictionary of metric arguments
-    """
-    def __init__(self, metric_args:Dict):
-        self.metric_args = metric_args
-
-        self.reference_free = self.metric_args["is_qe"]
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.metric_args["tokenizer_name"])
-        self.model = MT5ForRegression.from_pretrained(self.metric_args["model_name"])
+    def __init__(self, is_qe, tokenizer_name, model_name, batch_size,
+                 max_input_length):
+        self.reference_free = is_qe
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer_name)
+        self.model = MT5ForRegression.from_pretrained(model_name)
+        self.max_input_length = max_input_length
 
         if torch.cuda.is_available():
-            device = torch.device("cuda")
-            self.per_device_batch_size = self.metric_args["batch_size"] // torch.cuda.device_count()
+            self.device = torch.device("cuda")
+            self.per_device_batch_size = batch_size // torch.cuda.device_count()
         else:
-            device = torch.device("cpu")
-            self.per_device_batch_size = self.metric_args["batch_size"]
+            self.device = torch.device("cpu")
+            self.per_device_batch_size = batch_size
 
-        self.model.to(device)
+        self.model.to(self.device)
         self.model.eval()
 
         self.training_args = transformers.TrainingArguments(
             per_device_eval_batch_size=self.per_device_batch_size,
             dataloader_pin_memory=False,
+            # output_dir,
         )
 
         self.trainer = transformers.Trainer(
@@ -53,7 +50,7 @@ class MetricXMetric(BaseMetric):
             args=self.training_args,
         )
 
-    def get_dataset(self, sources:Union[List[str], None], hypothesis:List[str], references:List[str], max_input_length: int, device, is_qe: bool):
+    def get_dataset(self, sources:Union[List[str], None], hypothesis:List[str], references:List[str]):
         """Gets the test dataset for prediction.
 
         If `is_qe` is true, the input data must have "hypothesis" and "source" fields.
@@ -72,7 +69,7 @@ class MetricXMetric(BaseMetric):
         """
 
         def _make_input(example):
-            if is_qe:
+            if self.reference_free:
                 example["input"] = (
                     "candidate: "
                     + example["hypothesis"]
@@ -91,7 +88,7 @@ class MetricXMetric(BaseMetric):
         def _tokenize(example):
             return self.tokenizer(
                 example["input"],
-                max_length=max_input_length,
+                max_length=self.max_input_length,
                 truncation=True,
                 padding=False,
             )
@@ -108,20 +105,16 @@ class MetricXMetric(BaseMetric):
         ds.set_format(
             type="torch",
             columns=["input_ids", "attention_mask"],
-            device=device,
+            device=self.device,
             output_all_columns=True,
         )
         return ds
 
-    def score(self, predictions:List[str], references:List[List[str]], sources:List[str]=None) -> List[float]:
+    def score(self, predictions:List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[List[str]]]=None) -> List[float]:
         ds = self.get_dataset(
             sources,
             predictions,
             references,
-            self.tokenizer,
-            self.metric_args["max_input_length"],
-            self.metric_args["device"],
-            is_qe=self.reference_free
         )
  
         predictions, _, _ = self.trainer.predict(test_dataset=ds["test"])
