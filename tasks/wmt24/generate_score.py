@@ -9,7 +9,6 @@ def run(datasets, metrics):
         metric = metrics[metric_id]["model"]
         metric_name = metrics[metric_id]["name"]
         
-        scores = []
         for dataset in datasets:
             for i in range(len(dataset)):
                 obj = dataset[i]
@@ -18,8 +17,7 @@ def run(datasets, metrics):
                 refs.append(ref)
                 hyps.append(hyp)
 
-        scores.append(metric.score(hyps, refs, srcs))
-        metric_scores[metric] = scores
+        metric_scores[metric_name] = metric.score(hyps, refs, srcs)
     return metric_scores
     
 
