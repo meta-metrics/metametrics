@@ -40,7 +40,7 @@ if __name__ == "__main__":
         datasets.append(dataset)
 
     for metric_id in range(len(metrics_configs)):
-        metric = MetaMetrics(metrics_configs[metric_id], weights=[1])
+        metric = MetaMetrics([metrics_configs[metric_id]], weights=[1])
         metrics.append([metrics_configs[metric_id][0], metric])
 
     scores = run(datasets, metrics)
