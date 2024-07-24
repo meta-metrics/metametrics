@@ -7,7 +7,7 @@ def run(dataset, metrics):
     for metric_id in range(len(metrics)):
         srcs, refs, hyps = [], [], []
         metric = metrics[metric_id]["model"]
-        metric_name = metrics[metric_id]["model_name"]
+        metric_name = metrics[metric_id]["name"]
         
         scores = []
         for dataset in datasets:
