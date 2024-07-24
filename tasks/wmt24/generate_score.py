@@ -51,6 +51,16 @@ if __name__ == "__main__":
             with open(f"{metric_name}_{dataset_name}.tsv", "w") as tsvfile:
                 tsvwriter = csv.writer(tsvfile, delimiter='\t')
                 dataset = datasets[dataset_id]
-                for obj in dataset:
+
+                header = ["lp","src","mt","ref","metric_score","score","system","annotators","domain","year"]
+                tsvwriter.writerows(header)
+
+                for i in range(len(dataset)):
+                    obj = dataset[i]
                     obj["metric_score"] = scores[metric_name]
-                    tsvwriter.writerows(obj)
+
+                    arr = []
+                    for h in header:
+                        arr.append(obj[h])
+                    
+                    tsvwriter.writerows(arr)
