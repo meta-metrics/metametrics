@@ -35,7 +35,7 @@ class COMETMetric(BaseMetric):
             checkpoint_path = os.path.join(*[model_path, "checkpoints", "model.ckpt"])
         return checkpoint_path
 
-    def score(self, predictions: List[str], references: List[str], sources: Union[None, List[str]]=None) -> List[float]:
+    def score(self, predictions: List[str], references: Union[None, List[str]]=None, sources: Union[None, List[str]]=None) -> List[float]:
         # Data must be converted into the following format for COMET
         data = [{"src": src, "mt": mt, "ref": ref} for src, mt, ref in zip(sources, predictions, references)]
         return self.model.predict(data, batch_size=self.batch_size, gpus=self.gpus).scores
