@@ -34,5 +34,5 @@ class BLEURT20Metric(BaseMetric):
         
         self.scorer = score.BleurtScorer(bleurt_model_path)
 
-    def score(self, predictions: List[str], references: List[str], sources: Union[None, List[str]]=None) -> List[float]:
+    def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
         return self.scorer.score(references=references, candidates=predictions)
