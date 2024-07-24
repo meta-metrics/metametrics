@@ -47,7 +47,8 @@ if __name__ == "__main__":
     
     for dataset_id in range(len(datasets)):
         dataset_name = dataset_names[dataset_id]
-        for metric_name in scores:
+        for metric_id in range(len(scores)):
+            metric_name = metrics_configs[metric_id][0].replace("/", "_")
             with open(f"{metric_name}_{dataset_name}.tsv", "w") as tsvfile:
                 tsvwriter = csv.writer(tsvfile, delimiter='\t')
                 dataset = datasets[dataset_id]
