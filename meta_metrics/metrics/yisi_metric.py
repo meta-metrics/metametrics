@@ -79,7 +79,7 @@ class YiSiMetric(BaseMetric):
         
         return precision, recall
 
-    def score(self, predictions: List[str], references: List[str], sources: Union[None, List[str]]=None) -> List[float]:
+    def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
         idf_weights = self._compute_idf(predictions + references)
         pred_embeddings = self._get_token_embeddings(predictions)
         ref_embeddings = self._get_token_embeddings(references)

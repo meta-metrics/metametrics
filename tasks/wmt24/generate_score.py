@@ -1,69 +1,52 @@
-import csv
+import os
+
+import pandas as pd
+import numpy as np
 from datasets import load_dataset
+
 from meta_metrics import MetaMetrics
-from tqdm import tqdm
-
-def run(datasets, metrics):
-    metric_scores = {}
-    for metric_id in tqdm(range(len(metrics))):
-        srcs, refs, hyps = [], [], []
-        metric = metrics[metric_id]["model"]
-        metric_name = metrics[metric_id]["name"]
-        
-        for dataset in datasets:
-            for i in range(len(dataset)):
-                obj = dataset[i]
-                src, ref, hyp = obj["src"], obj["ref"], obj["mt"]
-                srcs.append(src)
-                refs.append(ref)
-                hyps.append(hyp)
-
-        metric_scores[metric_name] = metric.score(hyps, refs, srcs)
-    return metric_scores
     
-
 if __name__ == "__main__":
-    dataset_names =  ["RicardoRei/wmt-sqm-human-evaluation", "RicardoRei/wmt-mqm-human-evaluation", "RicardoRei/wmt-da-human-evaluation"]
-    metrics, datasets = [], []
+    dataset_names =  ["wmt-sqm-human-evaluation", "wmt-mqm-human-evaluation", "wmt-da-human-evaluation"]
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
 
     metrics_configs = [
-        ("bertscore", {"model_name": "xlm-roberta-base", "model_metric": "f1"}),
+        # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "precision"}),
+        # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "recall"}),
+        # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "f1"}),
         # ("yisi", {"model_name": "xlm-roberta-base", "alpha": 0.8}),
-        # ("comet", {"hf_token": "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"}),
+        ("comet", {"hf_token": "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", "batch_size": 8}),
         # ("xcomet", {"hf_token": "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"}),
-        # ("cometkiwi", {"hf_token": "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"}),
+        ("cometkiwi", {"hf_token": "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", "batch_size": 8}),
     ]
+    
+    all_metric_names = "_".join(config[0] for config in metrics_configs)
 
     for dataset_name in dataset_names:
-        dataset = load_dataset(dataset_name, split="train")
-        datasets.append(dataset)
+        # Saves locally as CSV, if exists just read from CSV
+        local_csv_path = os.path.join(cur_dir, f"output/{dataset_name}.csv")
+        if not os.path.exists(local_csv_path):
+            os.makedirs(os.path.join(cur_dir, "output"), exist_ok=True)
+            dataset = load_dataset(f"RicardoRei/{dataset_name}", split="train")
+            df = pd.DataFrame(dataset)
 
-    for metric_id in range(len(metrics_configs)):
-        metric = MetaMetrics([metrics_configs[metric_id]], weights=[1])
-        metrics.append({"name": metrics_configs[metric_id][0], "model":metric, "src_lang":None, "tgt_lang":None})
-
-    scores = run(datasets, metrics)
-    
-    for dataset_id in range(len(datasets)):
-        dataset_name = dataset_names[dataset_id].replace("/", "_")
-        for metric_id in range(len(scores)):
+            # Drop rows where any of the specified columns have NaN values
+            df = df.dropna(subset=['src', 'mt', 'ref'])
+            df['id'] = range(0, len(df))
+            df.to_csv(local_csv_path, sep='|', index=False)
+        else:    
+            df = pd.read_csv(local_csv_path, sep='|')
+        
+        predictions = df["mt"].to_list()
+        references = df["ref"].to_list()
+        sources = df["src"].to_list()
+        
+        new_df = pd.DataFrame()
+        new_df['id'] = df['id']
+                
+        for metric_id in range(len(metrics_configs)):
             metric_name = metrics_configs[metric_id][0]
-            with open(f"{metric_name}_{dataset_name}.tsv", "w") as tsvfile:
-                tsvwriter = csv.writer(tsvfile, delimiter='\t')
-                dataset = datasets[dataset_id]
+            metric = MetaMetrics([metrics_configs[metric_id]], weights=[1])
+            new_df[metric_name] = np.array(metric.score(predictions, references, sources))
 
-                header = ["lp","src","mt","ref","metric_score","score","raw","system","annotators","domain","year"]
-                tsvwriter.writerow(header)
-
-                for i in range(len(dataset)):
-                    obj = dataset[i]
-                    obj["metric_score"] = float(scores[metric_name][i])
-
-                    arr = []
-                    for h in header:
-                        if h not in obj:
-                            arr.append("")
-                        else:
-                            arr.append(obj[h])
-                    
-                    tsvwriter.writerow(arr)
+        new_df.to_csv(os.path.join(cur_dir, f"output/{dataset_name}_with_{all_metric_names}.csv"), index=False)

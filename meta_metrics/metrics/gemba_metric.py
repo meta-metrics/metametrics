@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import List
+from typing import List, Union
 from GEMBA.gemba.gpt_api import GptApi
 from GEMBA.gemba.CREDENTIALS import credentials
 from GEMBA.gemba.gemba_mqm_utils import TEMPLATE_GEMBA_MQM, apply_template, parse_mqm_answer
@@ -38,19 +38,9 @@ class GEMBA_MQM(BaseMetric):
         self.model = model 
         self.verbose = verbose
 
-    def score(self, source_lang: str, target_lang: str, source: List[str], hypothesis: List[str]) -> List[int]:
-        """
-        args:
-            source_lang (str): the language of texts in source
-            target_lang (str): the language of texts in hypothesis
-            source (List): a list of strings which are the source text
-            hypothesis (List): a list of strings which are the text a model output
-            model (str): a string of a model id, set in GEMBA/gemba/CREDENTIALS.py's deployments entry
-        """
-        source_lang = source_lang
-        target_lang = target_lang
-        source = [x.strip() for x in source]
-        hypothesis = [x.strip() for x in hypothesis] 
+    def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
+        source = [x.strip() for x in sources]
+        hypothesis = [x.strip() for x in predictions] 
 
         assert len(source) == len(hypothesis), "Source and hypothesis list must have the same number of entries."
 
@@ -58,8 +48,8 @@ class GEMBA_MQM(BaseMetric):
             'source_seg': source,
             'target_seg': hypothesis
         })
-        df['source_lang'] = source_lang
-        df['target_lang'] = target_lang 
+        df['source_lang'] = "source_lang"
+        df['target_lang'] = "target_lang"
         df['prompt'] = df.apply(lambda x: apply_template(TEMPLATE_GEMBA_MQM, x), axis=1)
         gptapi = GptApi(credentials, verbose=self.verbose)
         answers = gptapi.bulk_request(self.df, self.model, lambda x: parse_mqm_answer(x, list_mqm_errors=False, full_desc=True), cache=None, max_token=500)
