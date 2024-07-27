@@ -1,25 +1,12 @@
 from .base_metric import BaseMetric
 from .utils.metricx import *
+import json
 from torch.utils.data import Dataset
 from typing import Dict, List
 import torch
 import transformers
+import uuid
 
-class MetricXDataset(Dataset):
-
-    def __init__(self, sources, hypothesis, references):
-        self.sources = sources
-        self.hypothesis = hypothesis
-        self.references = references
-
-    def __getitem__(self, index):
-        if self.sources != None:
-            return self.predictions[index], self.references[index], self.source[index]
-        else:
-            return self.predictions[index], self.references[index]
-
-    def __len__(self):
-        return len(self.sources)
 
 class MetricXMetric(BaseMetric):
     """
@@ -101,7 +88,15 @@ class MetricXMetric(BaseMetric):
             example["attention_mask"] = example["attention_mask"][:-1]
             return example
 
-        ds = MetricXDataset(sources, hypothesis, references)
+        data_obj = []
+        for i in range(len(sources)):
+            data_obj.append({"hypothesis": hypothesis[i], "reference": references[i], "source": sources[i]})
+
+        input_file = uuid.uuid1() + ".json"
+        with open(input_file, "w+") as f:
+            f.write(json.dumps(data_obj) + "\n")
+
+        ds = datasets.load_dataset("json", data_files={"test": input_file})
         ds = ds.map(_make_input)
         ds = ds.map(_tokenize)
         ds = ds.map(_remove_eos)
