@@ -3,6 +3,8 @@ from .utils.metricx import *
 import json
 from torch.utils.data import Dataset
 from typing import Dict, List, Union
+import datasets
+import os
 import torch
 import transformers
 import uuid
@@ -10,10 +12,14 @@ import uuid
 
 class MetricXMetric(BaseMetric):
     def __init__(self, is_qe: bool, tokenizer_name: str, model_name: str, batch_size: int,
-                 max_input_length: int, **kwargs):
+                 max_input_length: int, bf16: bool, **kwargs):
         self.reference_free = is_qe
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer_name)
-        self.model = MT5ForRegression.from_pretrained(model_name)
+        self.bf16 = bf16
+        if self.bf16:
+            self.model = MT5ForRegression.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+        else:
+            self.model = MT5ForRegression.from_pretrained(model_name)
         self.max_input_length = max_input_length
 
         if torch.cuda.is_available():
@@ -29,7 +35,8 @@ class MetricXMetric(BaseMetric):
         self.training_args = transformers.TrainingArguments(
             per_device_eval_batch_size=self.per_device_batch_size,
             dataloader_pin_memory=False,
-            # output_dir,
+            output_dir=".",
+            bf16=self.bf16,
         )
 
         self.trainer = transformers.Trainer(
@@ -89,7 +96,7 @@ class MetricXMetric(BaseMetric):
         for i in range(len(sources)):
             data_obj.append({"hypothesis": hypothesis[i], "reference": references[i], "source": sources[i]})
 
-        input_file = uuid.uuid1() + ".json"
+        input_file = str(uuid.uuid1()) + ".json"
         with open(input_file, "w+") as f:
             f.write(json.dumps(data_obj) + "\n")
 
@@ -103,6 +110,7 @@ class MetricXMetric(BaseMetric):
             device=self.device,
             output_all_columns=True,
         )
+        os.system(f"rm {input_file}")
         return ds
 
     def score(self, predictions:List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[List[str]]]=None) -> List[float]:

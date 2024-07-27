@@ -15,9 +15,11 @@ if __name__ == "__main__":
         # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "recall"}),
         # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "f1"}),
         # ("yisi", {"model_name": "xlm-roberta-base", "alpha": 0.8}),
-        ("comet", {"hf_token": "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", "batch_size": 8}),
+        # ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 8192}),
+        ("metricx", {"model_name": "google/metricx-23-large-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-large", 'max_input_length': 8192, "bf16": True}),
+        # ("comet", {"hf_token": "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", "batch_size": 8}),
         # ("xcomet", {"hf_token": "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"}),
-        ("cometkiwi", {"hf_token": "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", "batch_size": 8}),
+        # ("cometkiwi", {"hf_token": "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", "batch_size": 8}),
     ]
     
     all_metric_names = "_".join(config[0] for config in metrics_configs)
