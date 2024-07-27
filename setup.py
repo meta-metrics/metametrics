@@ -24,22 +24,19 @@ class SetupInstallCommand(install):
             logging.info("Cloning BLEURT repository ...")
             subprocess.run(["git", "clone", "https://github.com/google-research/bleurt.git"])
             
-            # Navigate to the bleurt directory
-            os.chdir('bleurt')
+        # Navigate to the bleurt directory
+        os.chdir('bleurt')
 
-            # Install BLEURT
-            logging.info("Installing BLEURT ...")
-            result = subprocess.run(["pip", "install", "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.returncode == 0:
-                logging.info("BLEURT installed successfully.")
-            else:
-                logging.error("Failed to install BLEURT.")
-                logging.error(result.stderr.decode())
-                return
-            os.chdir('..')
+        # Install BLEURT
+        logging.info("Installing BLEURT ...")
+        result = subprocess.run(["pip", "install", "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logging.info("BLEURT installed successfully.")
         else:
-            logging.info("Skipping BLEURT installation as BLEURT already exists.")
-
+            logging.error("Failed to install BLEURT.")
+            logging.error(result.stderr.decode())
+            return
+        os.chdir('..')
 
         # reset working directory
         os.chdir(owd)
@@ -49,15 +46,15 @@ class SetupInstallCommand(install):
         if not os.path.isdir('mt-metrics-eval'):
             logging.info("Cloning mt-metrics-eval ...")
             subprocess.run(["git", "clone", "https://github.com/google-research/mt-metrics-eval.git"])
-            os.chdir("mt-metrics-eval")
-            logging.info("Installing mt-metrics-eval ...")
-            result = subprocess.run(["pip", "install", "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.returncode == 0:
-                logging.info("mt-metrics-eval installed successfully.")
-            else:
-                logging.error("Failed to install  mt-metrics-eval .")
-                logging.error(result.stderr.decode())
-                return
+        os.chdir("mt-metrics-eval")
+        logging.info("Installing mt-metrics-eval ...")
+        result = subprocess.run(["pip", "install", "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logging.info("mt-metrics-eval installed successfully.")
+        else:
+            logging.error("Failed to install  mt-metrics-eval .")
+            logging.error(result.stderr.decode())
+            return
         
         os.chdir(owd)
         
