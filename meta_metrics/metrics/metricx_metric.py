@@ -38,11 +38,18 @@ class MetricXMetric(BaseMetric):
             output_dir=".",
             bf16=self.bf16,
         )
-
-        self.trainer = transformers.Trainer(
-            model=self.model,
-            args=self.training_args,
-        )
+        if self.per_device_batch_size == 1:
+            self.trainer = transformers.Trainer(
+                model=self.model,
+                args=self.training_args,
+            )
+        else:
+            data_collator = transformers.DataCollatorWithPadding(tokenizer=self.tokenizer, padding=True)
+            self.trainer = transformers.Trainer(
+                model=self.model,
+                args=self.training_args,
+                data_collator = data_collator
+            )
 
     def get_dataset(self, sources:Union[List[str], None], hypothesis:List[str], references:List[str]):
         """Gets the test dataset for prediction.
@@ -80,12 +87,21 @@ class MetricXMetric(BaseMetric):
             return example
 
         def _tokenize(example):
-            return self.tokenizer(
-                example["input"],
-                max_length=self.max_input_length,
-                truncation=True,
-                padding=False,
-            )
+            if self.per_device_batch_size == 1:
+                return self.tokenizer(
+                    example["input"],
+                    max_length=self.max_input_length,
+                    truncation=True,
+                    padding=False,
+                )
+            else:
+                return self.tokenizer(
+                    example["input"],
+                    max_length=self.max_input_length,
+                    truncation=True,
+                    # padding=False,
+                    padding='max_length',
+                )
 
         def _remove_eos(example):
             example["input_ids"] = example["input_ids"][:-1]
