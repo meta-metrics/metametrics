@@ -37,8 +37,10 @@ class MetaMetrics:
                 metric = BLEURT20Metric()
             elif metric_name == "comet":
                 metric = COMETMetric(comet_model="Unbabel/wmt22-comet-da", **metric_args)
-            elif metric_name == "xcomet":
+            elif metric_name == "xcomet-xxl":
                 metric = COMETMetric(comet_model="Unbabel/XCOMET-XXL", **metric_args)
+            elif metric_name == "xcomet-xl":
+                metric = COMETMetric(comet_model="Unbabel/XCOMET-XL", **metric_args)
             elif metric_name == "cometkiwi":
                 metric = COMETMetric(comet_model="Unbabel/wmt22-cometkiwi-da", **metric_args)
             elif metric_name == "metricx":
