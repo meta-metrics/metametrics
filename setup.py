@@ -114,7 +114,8 @@ setup(
         "termcolor",
         "pexpect",
         "ipdb",
-        "absl-py"
+        "absl-py",
+        "tqdm"
     ],
     python_requires=">=3.10",
     cmdclass={
