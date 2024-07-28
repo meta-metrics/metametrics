@@ -6,18 +6,19 @@ import pandas as pd
 human_scores = []
 metric_scores = {}
 
-df = pd.read_csv('data.csv')
-df.drop(columns=["id"])
-
+df = pd.read_csv('wmt-sqm-human-evaluation_score.csv')
+df = df.drop(columns=["id"])
+human_scores = df['human_score'].to_list()
+df = df.drop(columns=["human_score"])
 metrics_names = list(df.columns)
 for metric_name in metrics_names:
-    if metric_name != "human_score":
-        metric_scores[metric_name] = True
+    metric_scores[metric_name] = []
 
-for index, row in df.iterrows():
-    human_scores.append(row['human_score'])
-    for metric_name in metrics_names:
-        metric_scores[metric_name].append(row[metric_name])
+for metric_name in metrics_names:
+    if metric_name != "human_score":
+        metric_scores[metric_name] = df[metric_name].to_list()
+        kendall_score = stats.kendalltau(human_scores, metric_scores[metric_name])
+        print(metric_name, kendall_score.correlation)
 
 print("metrics names:", metrics_names)
 
@@ -34,20 +35,19 @@ def black_box_function(**metric_weights):
     which generates its output values, as unknown.
     """
     final_metric_scores = []
+    print("metric_weights:", metric_weights)
     
     count = 0
-    for i in range(len(metric_weights)):
-        for j in range(len(dataset:
-            if i == 0:
-                human_scores.append(data["human_score"])
-                final_metric_scores.append(data["metric_score"] * metric_weights[i])
-            else:
-                final_metric_scores[j] += data["metric_score"] * metric_weights[i]
+    for i in range(len(human_scores)): # data
+        score = 0
+        for metric_name in metric_scores: # metrics
+            score += metric_scores[metric_name][i] * metric_weights[metric_name]
+        final_metric_scores.append(score)
         count += 1
 
     # calculate kendall
     kendall_score = stats.kendalltau(human_scores, final_metric_scores)
-    return kendall_score
+    return kendall_score.correlation
 
 optimizer = BayesianOptimization(
     f=black_box_function,
@@ -59,3 +59,5 @@ optimizer.maximize(
     init_points=2,
     n_iter=40,
 )
+
+print(optimizer.max)
