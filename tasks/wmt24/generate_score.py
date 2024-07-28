@@ -61,7 +61,8 @@ if __name__ == "__main__":
             if metrics_configs[metric_id][2]:
                 metric_name += "_reference_free"
             if metric_name == "bertscore":
-                metric_name += f"_{metrics_configs[metric_id][1]['model_metric']}"
+                model_metric = metrics_configs[metric_id][1]["model_metric"]
+                metric_name += f"_{model_metric}"
             
             metric = MetaMetrics([metrics_configs[metric_id]], weights=[1])
             new_df[metric_name] = np.array(metric.score(predictions, references, sources))
