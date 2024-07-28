@@ -24,9 +24,9 @@ if __name__ == "__main__":
         # ("xcomet-xxl", {"hf_token": "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", "batch_size": 1}, False),
 
         ##### Reference-Free
-        # ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),
-        # ("metricx", {"model_name": "google/metricx-23-xl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, True),
-        # ("metricx", {"model_name": "google/metricx-23-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),        
+        # ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),
+        # ("metricx", {"model_name": "google/metricx-23-qe-xl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, True),
+        # ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),        
         # ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True),
         # ("cometkiwi-xxl", {"hf_token": "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", "batch_size": 1}, True),
     ]
