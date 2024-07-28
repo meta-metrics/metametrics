@@ -14,7 +14,7 @@ if __name__ == "__main__":
         ##### With Reference
         # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "precision", "batch_size": 4}, False),
         # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "recall", "batch_size": 4}, False),
-        ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "f1", "batch_size": 4}, False),
+        # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "f1", "batch_size": 4}, False),
         # ("yisi", {"model_name": "xlm-roberta-base", "alpha": 0.8}, False),
         # ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
         # ("metricx", {"model_name": "google/metricx-23-xl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, False),
@@ -29,6 +29,7 @@ if __name__ == "__main__":
         # ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),        
         # ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True),
         # ("cometkiwi-xxl", {"hf_token": "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", "batch_size": 1}, True),
+        ("gemba_mqm", {"model": "gpt_4"}, True)
     ]
     
     all_metric_names = "_".join(config[0] for config in metrics_configs)
