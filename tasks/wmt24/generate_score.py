@@ -29,7 +29,7 @@ if __name__ == "__main__":
         # ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),        
         # ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True),
         # ("cometkiwi-xxl", {"hf_token": "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", "batch_size": 1}, True),
-        ("gemba_mqm", {"model": "gpt_4"}, True)
+        ("gemba_mqm", {"model": "gpt-4"}, True)
     ]
     
     all_metric_names = "_".join(config[0] for config in metrics_configs)
