@@ -28,9 +28,9 @@ if __name__ == "__main__":
 
     for dataset_name in dataset_names:
         # Saves locally as CSV, if exists just read from CSV
-        local_csv_path = os.path.join(cur_dir, f"output/{dataset_name}.csv")
+        local_csv_path = os.path.join(cur_dir, f"output_wmt24/{dataset_name}.csv")
         if not os.path.exists(local_csv_path):
-            os.makedirs(os.path.join(cur_dir, "output"), exist_ok=True)
+            os.makedirs(os.path.join(cur_dir, "output_wmt24"), exist_ok=True)
             dataset = load_dataset(f"gentaiscool/{dataset_name}", split="train")
             df = pd.DataFrame(dataset)
 
@@ -60,4 +60,4 @@ if __name__ == "__main__":
             metric = MetaMetrics([metrics_configs[metric_id]], weights=[1])
             new_df[metric_name] = np.array(metric.score(predictions, references, sources))
 
-        new_df.to_csv(os.path.join(cur_dir, f"output/{dataset_name}_with_{all_metric_names}.csv"), index=False)
+        new_df.to_csv(os.path.join(cur_dir, f"output_wmt24/{dataset_name}_with_{all_metric_names}.csv"), index=False)
