@@ -109,10 +109,18 @@ class MetricXMetric(BaseMetric):
             return example
 
         data_obj = []
-        for i in range(len(sources)):
-            data_obj.append({"hypothesis": hypothesis[i], "reference": references[i], "source": sources[i]})
+        for i in range(len(hypothesis)):
+            new_obj = {}
+            if sources is not None:
+                new_obj["source"] = sources[i]
+            if hypothesis is not None:
+                new_obj["hypothesis"] = hypothesis[i]
+            if references is not None:
+                new_obj["reference"] = references[i]
+            data_obj.append(new_obj)
 
         input_file = str(uuid.uuid1()) + ".json"
+        print(f"input file: {input_file}")
         with open(input_file, "w+") as f:
             f.write(json.dumps(data_obj) + "\n")
 
