@@ -29,6 +29,7 @@ class MetaMetrics:
             assert len(self.metrics) == len(self.weights)
 
     def get_metric(self, metric_name, metric_args):
+        print(f"get metric: {metric_name}")
         metric = None
         if metric_name == "bertscore":
             metric = BERTScoreMetric(**metric_args)
@@ -53,6 +54,7 @@ class MetaMetrics:
         return metric
     
     def init_metrics(self):
+        print("initialize metric in normal mode")
         for i in range(len(self.metrics_configs)):
             metric_config = self.metrics_configs[i]
             metric_name = metric_config[0]
@@ -67,6 +69,8 @@ class MetaMetrics:
                 metric_config = self.metrics_configs[i]
                 metric_name = metric_config[0]
                 metric_args = metric_config[1]
+
+                print(f"initialize metric: {metric_name} in memory efficient mode")
                 metric = self.get_metric(metric_name, metric_args)
                 metric_score = np.array(metric.score(predictions, references, sources))
                 del metric # for efficiency
