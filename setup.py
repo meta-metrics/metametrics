@@ -20,6 +20,7 @@ class SetupInstallCommand(install):
         os.chdir('meta_metrics/metrics')
 
         # Clone BLEURT repository if it doesn't exist
+        os.system("rm -rf bleurt")
         if not os.path.isdir('bleurt'):
             logging.info("Cloning BLEURT repository ...")
             subprocess.run(["git", "clone", "https://github.com/google-research/bleurt.git"])
@@ -42,6 +43,7 @@ class SetupInstallCommand(install):
         
         # Navigate to the tasks/mteval
         os.chdir('tasks/mteval')
+        os.system("rm -rf mt-metrics-eval")
         if not os.path.isdir('mt-metrics-eval'):
             logging.info("Cloning mt-metrics-eval ...")
             subprocess.run(["git", "clone", "https://github.com/google-research/mt-metrics-eval.git"])
