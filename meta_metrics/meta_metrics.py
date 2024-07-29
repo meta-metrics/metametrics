@@ -10,6 +10,7 @@ from meta_metrics.metrics import BLEURT20Metric
 from meta_metrics.metrics import COMETMetric
 from meta_metrics.metrics import MetricXMetric
 from meta_metrics.metrics import YiSiMetric
+from meta_metrics.metrics import GEMBA_MQM
 
 class MetaMetrics:
     """
@@ -49,6 +50,8 @@ class MetaMetrics:
                 metric = MetricXMetric(**metric_args)
             elif metric_name == "yisi":
                 metric = YiSiMetric(**metric_args)
+            elif metric_name =="gemba_mqm":
+                metric = GEMBA_MQM(**metric_args)
             self.metrics.append(metric)
 
     def score(self, predictions:List[str], references:List[str], sources: List[str] = None) -> List[float]:

@@ -1,8 +1,9 @@
 import pandas as pd
+import json
 from typing import List, Union
-from GEMBA.gemba.gpt_api import GptApi
-from GEMBA.gemba.CREDENTIALS import credentials
-from GEMBA.gemba.gemba_mqm_utils import TEMPLATE_GEMBA_MQM, apply_template, parse_mqm_answer
+from .GEMBA.gemba.gpt_api import GptApi
+from .GEMBA.gemba.CREDENTIALS import credentials
+from .GEMBA.gemba.gemba_mqm_utils import TEMPLATE_GEMBA_MQM, apply_template, parse_mqm_answer
 
 from .base_metric import BaseMetric
 
@@ -52,5 +53,9 @@ class GEMBA_MQM(BaseMetric):
         df['target_lang'] = "target_lang"
         df['prompt'] = df.apply(lambda x: apply_template(TEMPLATE_GEMBA_MQM, x), axis=1)
         gptapi = GptApi(credentials, verbose=self.verbose)
-        answers = gptapi.bulk_request(self.df, self.model, lambda x: parse_mqm_answer(x, list_mqm_errors=False, full_desc=True), cache=None, max_token=500)
-        return answers
+        answers = gptapi.bulk_request(df, self.model, lambda x: parse_mqm_answer(x, list_mqm_errors=False, full_desc=True), cache=None, max_tokens=500)
+        with open("gemba_output.json", 'w') as f:
+            json.dump(answers, f)
+        answers_list = [x['answer'] for x in answers]
+        return answers_list
+    
