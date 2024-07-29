@@ -23,41 +23,43 @@ class MetaMetrics:
         self.metrics = []
         self.weights = weights
 
-        self.init_metrics()
-        assert len(self.metrics) == len(self.weights)
+    def get_metric(self, metric_name, metric_args):
+        print(f"get metric: {metric_name}")
+        metric = None
+        if metric_name == "bertscore":
+            metric = BERTScoreMetric(**metric_args)
+        elif metric_name == "bleurt":
+            metric = BLEURT20Metric()
+        elif metric_name == "comet":
+            metric = COMETMetric(comet_model="Unbabel/wmt22-comet-da", **metric_args)
+        elif metric_name == "xcomet-xxl":
+            metric = COMETMetric(comet_model="Unbabel/XCOMET-XXL", **metric_args)
+        elif metric_name == "xcomet-xl":
+            metric = COMETMetric(comet_model="Unbabel/XCOMET-XL", **metric_args)
+        elif metric_name == "cometkiwi":
+            metric = COMETMetric(comet_model="Unbabel/wmt22-cometkiwi-da", **metric_args)
+        elif metric_name == "cometkiwi-xxl":
+            metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xxl", **metric_args)
+        elif metric_name == "metricx":
+            metric = MetricXMetric(**metric_args)
+        elif metric_name == "yisi":
+            metric = YiSiMetric(**metric_args)
+        elif metric_name =="gemba_mqm":
+            metric = GEMBA_MQM(**metric_args)
+        return metric
 
-    def init_metrics(self):
+    def score(self, predictions:List[str], references:List[str], sources: List[str] = None) -> List[float]:
+        overall_metric_score = None
         for i in range(len(self.metrics_configs)):
             metric_config = self.metrics_configs[i]
             metric_name = metric_config[0]
             metric_args = metric_config[1]
 
-            if metric_name == "bertscore":
-                metric = BERTScoreMetric(**metric_args)
-            elif metric_name == "bleurt":
-                metric = BLEURT20Metric()
-            elif metric_name == "comet":
-                metric = COMETMetric(comet_model="Unbabel/wmt22-comet-da", **metric_args)
-            elif metric_name == "xcomet-xxl":
-                metric = COMETMetric(comet_model="Unbabel/XCOMET-XXL", **metric_args)
-            elif metric_name == "xcomet-xl":
-                metric = COMETMetric(comet_model="Unbabel/XCOMET-XL", **metric_args)
-            elif metric_name == "cometkiwi":
-                metric = COMETMetric(comet_model="Unbabel/wmt22-cometkiwi-da", **metric_args)
-            elif metric_name == "cometkiwi-xxl":
-                metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xxl", **metric_args)
-            elif metric_name == "metricx":
-                metric = MetricXMetric(**metric_args)
-            elif metric_name == "yisi":
-                metric = YiSiMetric(**metric_args)
-            elif metric_name =="gemba_mqm":
-                metric = GEMBA_MQM(**metric_args)
-            self.metrics.append(metric)
+            print(f"initialize metric: {metric_name}")
+            metric = self.get_metric(metric_name, metric_args)
+            metric_score = np.array(metric.score(predictions, references, sources))
+            del metric # for efficiency
 
-    def score(self, predictions:List[str], references:List[str], sources: List[str] = None) -> List[float]:
-        overall_metric_score = None
-        for i in range(len(self.metrics)):
-            metric_score = np.array(self.metrics[i].score(predictions, references, sources))
             if i == 0:
                 overall_metric_score = metric_score * self.weights[i]
             else:

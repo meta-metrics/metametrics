@@ -59,6 +59,11 @@ class SetupInstallCommand(install):
         
         # Run the standard install process
         install.run(self)
+
+        # Install submodule (GEMBA)
+        git submodule update --init --recursive 
+        
+        git submodule update
         
 
 with open("README.md", "r", encoding="utf-8") as fh:
