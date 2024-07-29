@@ -18,15 +18,10 @@ class MetaMetrics:
             metrics_configs (List[Tuple[str, dict]]): a list of tuple of metric with the metric name and arguments.
             weights (List[float]): a list of float weight assigned to each metric
     """
-    def __init__(self, metrics_configs:List[Tuple[str, dict]], weights:List[float] = None, mem_efficient=False):
+    def __init__(self, metrics_configs:List[Tuple[str, dict]], weights:List[float] = None):
         self.metrics_configs = metrics_configs
         self.metrics = []
         self.weights = weights
-        self.mem_efficient = mem_efficient
-
-        if not self.mem_efficient:
-            self.init_metrics()
-            assert len(self.metrics) == len(self.weights)
 
     def get_metric(self, metric_name, metric_args):
         print(f"get metric: {metric_name}")
@@ -52,31 +47,19 @@ class MetaMetrics:
         elif metric_name =="gemba_mqm":
             metric = GEMBA_MQM(**metric_args)
         return metric
-    
-    def init_metrics(self):
-        print("initialize metric in normal mode")
+
+    def score(self, predictions:List[str], references:List[str], sources: List[str] = None) -> List[float]:
+        overall_metric_score = None
         for i in range(len(self.metrics_configs)):
             metric_config = self.metrics_configs[i]
             metric_name = metric_config[0]
             metric_args = metric_config[1]
+
+            print(f"initialize metric: {metric_name}")
             metric = self.get_metric(metric_name, metric_args)
-            self.metrics.append(metric)
+            metric_score = np.array(metric.score(predictions, references, sources))
+            del metric # for efficiency
 
-    def score(self, predictions:List[str], references:List[str], sources: List[str] = None) -> List[float]:
-        overall_metric_score = None
-        for i in range(len(self.metrics)):
-            if self.mem_efficient:
-                metric_config = self.metrics_configs[i]
-                metric_name = metric_config[0]
-                metric_args = metric_config[1]
-
-                print(f"initialize metric: {metric_name} in memory efficient mode")
-                metric = self.get_metric(metric_name, metric_args)
-                metric_score = np.array(metric.score(predictions, references, sources))
-                del metric # for efficiency
-            else:
-                metric_score = np.array(self.metrics[i].score(predictions, references, sources))
-            
             if i == 0:
                 overall_metric_score = metric_score * self.weights[i]
             else:

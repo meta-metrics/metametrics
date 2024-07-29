@@ -7,26 +7,14 @@ from datasets import load_dataset
 from meta_metrics import MetaMetrics
     
 if __name__ == "__main__":
-    dataset_names =  ["wmt-sqm-human-evaluation", "wmt-mqm-human-evaluation", "wmt-da-human-evaluation"]
+    dataset_names =  ["wmt24-mqm-qe"]
     cur_dir = os.path.dirname(os.path.abspath(__file__))
 
     metrics_configs = [
-        ##### With Reference
-        # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "precision", "batch_size": 4}, False),
-        # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "recall", "batch_size": 4}, False),
-        # ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "f1", "batch_size": 4}, False),
-        # ("yisi", {"model_name": "xlm-roberta-base", "alpha": 0.8}, False),
-        # ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
-        # ("metricx", {"model_name": "google/metricx-23-xl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, False),
-        # ("metricx", {"model_name": "google/metricx-23-large-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, False),
-        # ("comet", {"hf_token": "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", "batch_size": 1}, False),
-        # ("xcomet-xl", {"hf_token": "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", "batch_size": 1}, False),
-        # ("xcomet-xxl", {"hf_token": "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", "batch_size": 1}, False),
-
         ##### Reference-Free
         # ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),
         # ("metricx", {"model_name": "google/metricx-23-qe-xl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, True),
-        # ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),        
+        ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),        
         # ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True),
         # ("cometkiwi-xxl", {"hf_token": "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", "batch_size": 1}, True),
         # ("gemba_mqm", {"model": "gpt-4o-mini"}, True)
@@ -39,11 +27,11 @@ if __name__ == "__main__":
         local_csv_path = os.path.join(cur_dir, f"output/{dataset_name}.csv")
         if not os.path.exists(local_csv_path):
             os.makedirs(os.path.join(cur_dir, "output"), exist_ok=True)
-            dataset = load_dataset(f"RicardoRei/{dataset_name}", split="train")
+            dataset = load_dataset(f"gentaiscool/{dataset_name}", split="train")
             df = pd.DataFrame(dataset)
-
+            print(">>>>>>>>", len(df))
             # Drop rows where any of the specified columns have NaN values
-            df = df.dropna(subset=['src', 'mt', 'ref'])
+            df = df.dropna(subset=['src', 'mt'])
             df['id'] = range(0, len(df))
             df.to_csv(local_csv_path, sep='|', index=False)
         else:    

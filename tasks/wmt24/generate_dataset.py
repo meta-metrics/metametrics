@@ -11,7 +11,7 @@ from typing import Dict, List
 
 from pathlib import Path
 
-file_dir_path = str(Path(__file__).absolute()).replace("prepare_scores.py","")
+file_dir_path = str(Path(__file__).absolute()).replace("generate_dataset.py","")
 
 SRC_PATH = file_dir_path + "wmt24-metrics-inputs/metrics_inputs/txt/{}/sources/{}.{}.src.{}"
 REFA_PATH = file_dir_path + "wmt24-metrics-inputs/metrics_inputs/txt/{}/references/{}.{}.ref.refA.{}"
@@ -96,6 +96,9 @@ def segment_level_scoring(samples: Dict[str, List[str]], metric: str):
     elif metric == "random":
         scores = np.random.random(size = len(samples["ref"]))
 
+    elif metric == "zero":
+        scores = np.random.random(size = len(samples["ref"])) * 0
+    
     elif metric == "meta_metrics":
         scores = run_sentence_meta_metrics(samples["mt"], samples["ref"])
         
@@ -243,7 +246,6 @@ def segment_scores(source, references, system_outputs, metadata, language_pair, 
                     document = "-"
                 
                 segment_scores.append({
-                    "METRIC": metric_name,
                     "LANG-PAIR": language_pair,
                     "TESTSET": testset,
                     "DOMAIN": domain,
@@ -251,7 +253,11 @@ def segment_scores(source, references, system_outputs, metadata, language_pair, 
                     "REFERENCE": ref,
                     "SYSTEM_ID": hyp,
                     "SEGMENT_ID": i+1,
-                    "SEGMENT_SCORE": scores[i]
+                    "lp": language_pair,
+                    "system": hyp,
+                    "ref": references[ref][i],
+                    "src": source[i],
+                    "mt": system_outputs[hyp][i]
                 })
             
             # Compute and save System scores for all domains.
@@ -301,7 +307,6 @@ def segment_scores(source, references, system_outputs, metadata, language_pair, 
                         document = "-"
                     
                     segment_scores.append({
-                        "METRIC": metric_name,
                         "LANG-PAIR": language_pair,
                         "TESTSET": testset,
                         "DOMAIN": domain,
@@ -309,7 +314,11 @@ def segment_scores(source, references, system_outputs, metadata, language_pair, 
                         "REFERENCE": ref,
                         "SYSTEM_ID": alt_ref,
                         "SEGMENT_ID": i+1,
-                        "SEGMENT_SCORE": scores[i]
+                        "lp": language_pair,
+                        "system": alt_ref,
+                        "ref": references[ref][i],
+                        "src": source[i],
+                        "mt": references[alt_ref][i]
                     })
 
                 # Compute and save System scores for all domains.
@@ -372,8 +381,8 @@ if __name__ == "__main__":
         system_data.append(systems)
     
     segment_data = pd.concat(segment_data, ignore_index=True)
-    segment_data.to_csv("scores/{}.seg.score".format(args.baseline), index=False, header=False, sep="\t")
+    segment_data.to_csv("scores_custom/{}.seg.score".format(args.baseline), index=False, header=True, sep="\t")
     
     system_data = pd.concat(system_data, ignore_index=True)
-    system_data.to_csv("scores/{}.sys.score".format(args.baseline), index=False, header=False, sep="\t")
+    system_data.to_csv("scores_custom/{}.sys.score".format(args.baseline), index=False, header=True, sep="\t")
 
