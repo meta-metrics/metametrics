@@ -15,6 +15,19 @@ class BERTScoreMetric(BaseMetric):
         self.nthreads = nthreads
 
     def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[List[str]]]=None) -> List[float]:
-        return self.hf_metric.compute(predictions=predictions, references=references, 
-                                      model_type=self.model_name, batch_size=self.batch_size,
-                                      nthreads=self.nthreads)[self.model_metric]
+        all_scores = []
+        offset = 25000
+        count = 0
+        for i in range(0, len(predictions), offset):
+            count += 1
+            if count > 1:
+                del self.hf_metric
+                self.hf_metric = load("bertscore")
+                
+            print(f"offset: {i}")
+            scores = self.hf_metric.compute(predictions=predictions[i:i+offset], references=references[i:i+offset], 
+                                          model_type=self.model_name, batch_size=self.batch_size,
+                                          nthreads=self.nthreads)[self.model_metric]
+            all_scores = all_scores + scores
+        return all_scores
+            
