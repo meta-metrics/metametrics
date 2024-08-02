@@ -1,0 +1,13 @@
+{
+  "mqm": {
+    "target": 0.4691271669380812,
+    "params": {
+      "GEMBA_score": 0.06460795131265709,
+      "metricx-23-qe-large-v2p0_reference_free": 0.25352367596996267,
+      "metricx-23-qe-xl-v2p0_reference_free": 0.03973703688652602,
+      "metricx-23-qe-xxl-v2p0_reference_free": 1.0,
+      "wmt22-cometkiwi-da_reference_free": 0.0,
+      "wmt23-cometkiwi-da-xl_reference_free": 0.0
+    }
+  }
+}
