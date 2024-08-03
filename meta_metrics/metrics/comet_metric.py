@@ -6,7 +6,7 @@ import logging
 from comet import load_from_checkpoint
 from huggingface_hub import snapshot_download
 
-from .base_metric import BaseMetric
+from meta_metrics.metrics.base_metric import BaseMetric
 
 class COMETMetric(BaseMetric):
     def __init__(self, comet_model: str="Unbabel/XCOMET-XXL", batch_size: int=8, gpus: int=1,

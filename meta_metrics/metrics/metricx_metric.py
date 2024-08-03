@@ -1,5 +1,5 @@
-from .base_metric import BaseMetric
-from .utils.metricx import *
+from meta_metrics.metrics.base_metric import BaseMetric
+from meta_metrics.metrics.utils.metricx import *
 import json
 from torch.utils.data import Dataset
 from typing import Dict, List, Union

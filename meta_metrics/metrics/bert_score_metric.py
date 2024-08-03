@@ -1,6 +1,6 @@
 from evaluate import load
 from typing import List, Union
-from .base_metric import BaseMetric
+from meta_metrics.metrics.base_metric import BaseMetric
 
 class BERTScoreMetric(BaseMetric):
     """
