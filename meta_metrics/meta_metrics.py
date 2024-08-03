@@ -17,11 +17,22 @@ class MetaMetrics:
         Args:
             metrics_configs (List[Tuple[str, dict]]): a list of tuple of metric with the metric name and arguments.
             weights (List[float]): a list of float weight assigned to each metric
+            cache_mode: bool
     """
-    def __init__(self, metrics_configs:List[Tuple[str, dict]], weights:List[float] = None):
+    def __init__(self, metrics_configs:List[Tuple[str, dict]], weights:List[float] = None, cache_mode:bool=False):
         self.metrics_configs = metrics_configs
         self.metrics = []
         self.weights = weights
+        self.cache_mode = cache_mode
+
+        if self.cache_mode:
+            for i in range(len(self.metrics_configs)):
+                metric_config = self.metrics_configs[i]
+                metric_name = metric_config[0]
+                metric_args = metric_config[1]
+                print(f"[cache mode] initialize metric: {metric_name}")
+                metric = self.get_metric(metric_name, metric_args)
+                self.metrics.append(metric)
 
     def get_metric(self, metric_name, metric_args):
         print(f"get metric: {metric_name}")
@@ -55,8 +66,12 @@ class MetaMetrics:
             metric_name = metric_config[0]
             metric_args = metric_config[1]
 
-            print(f"initialize metric: {metric_name}")
-            metric = self.get_metric(metric_name, metric_args)
+            if self.cache_mode:
+                print(f"[cache mode] get metric: {metric_name}")
+                metric = self.metrics[i]
+            else:
+                print(f"initialize metric: {metric_name}")
+                metric = self.get_metric(metric_name, metric_args)
             metric_score = np.array(metric.score(predictions, references, sources))
             del metric # for efficiency
 
