@@ -53,7 +53,11 @@ def NewMetric(
 
   segment_scores = {}
   system_scores = {}
+  count = 0
+  
   for sysname, hyp in hyps.items():
+    count += 1
+    print(f"######### {count} of {len(hyps)}")
     outputs = np.array(metric.score(hyp, ref, src))
 
     segment_scores[sysname] = outputs
@@ -74,8 +78,8 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 
 metrics_configs = [
     ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
-    ("comet", {"hf_token": "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", "batch_size": 1}, False),
-    ("xcomet-xl", {"hf_token": "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", "batch_size": 1}, False)
+    ("comet", {"hf_token": "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", "batch_size": 8}, False),
+    ("xcomet-xl", {"hf_token": "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", "batch_size": 8}, False)
 ]
 
 # "params": {
@@ -95,18 +99,20 @@ for lp in wmt23_lps:
     with open(f"scores_{lp}_system.tsv", "w+") as f_out_system:
         writer = csv.writer(f_out_segment, delimiter='\t')
         writer_system = csv.writer(f_out_system, delimiter='\t')
-
+        print(">>>>>>>>", len(evs.all_refs))
+        writer.writerow(["refname","sys_name","lp","segment_id","src","ref","mt","score"])
+        writer_system.writerow(["refname","sys_name","lp","score"])
         for refname, ref in evs.all_refs.items():
-            print(">>>", refname)
+            print(">>>>>", refname)
             seg_scores, sys_scores = NewMetric(metric, evs.lp, evs.domains, evs.docs, evs.src, ref, evs.sys_outputs)
             evs.AddMetric(metric_name, {refname}, 'sys', sys_scores, replace=True)
             evs.AddMetric(metric_name, {refname}, 'seg', seg_scores, replace=True)
-
-            f_out_segment.writerow(["sys_name","lp","segment_id","src","ref","mt","score"])
-
-            for sys_name in range(seg_scores):
+            for sys_name in sys_scores:
+                writer_system.writerow([refname, sys_name, evs.lp, sys_scores[sys_name][0]])
+            
+            for sys_name in seg_scores:
                 for _id in range(len(seg_scores[sys_name])):
-                    f_out_segment.writerow([sys_name, evs.lp, _id, evs.src[_id], ref[sys_name][_id], evs.sys_outputs[_id], seg_scores[sys_name][_id]])
+                    writer.writerow([refname, sys_name, evs.lp, _id, evs.src[_id], ref[_id], evs.sys_outputs[sys_name][_id], seg_scores[sys_name][_id]])
 
 # Add new metric to the primary lists, so it will get picked up when tasks get
 # run with primary=True (avoiding having to evaluate all contrastive
