@@ -2,7 +2,7 @@ import os
 import csv
 from meta_metrics import MetaMetrics
 
-os.system("!git clone https://github.com/google-research/mt-metrics-eval.git && cd mt-metrics-eval && pip install .")
+os.system("git clone https://github.com/google-research/mt-metrics-eval.git && cd mt-metrics-eval && pip install .")
 
 # @title Imports
 
@@ -49,7 +49,7 @@ def NewMetric(
   # Sample metric just computes a length match between each hypothesis and the
   # reference. It ignores lp, domains, docs, and source.
 
-  del lp, domains, docs, src
+  del lp, domains, docs
 
   segment_scores = {}
   system_scores = {}
@@ -72,11 +72,11 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 # Setting replace=True makes this work if we want to iterate over different
 # versions of the metric.
 
-metrics_configs = {
+metrics_configs = [
     ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
     ("comet", {"hf_token": "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", "batch_size": 1}, False),
-    ("xcomet-xl", {"hf_token": "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", "batch_size": 1}, False),
-}
+    ("xcomet-xl", {"hf_token": "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", "batch_size": 1}, False)
+]
 
 # "params": {
 #       "metricx-23-xxl-v2p0": 1.0,
@@ -85,7 +85,7 @@ metrics_configs = {
 #     }
 
 metric_name = 'metametrics'
-metric = MetaMetrics(metrics_configs, weights=[1,0.2055307813370211,0.27327721603913696])
+metric = MetaMetrics(metrics_configs, weights=[1,0.2055307813370211,0.27327721603913696], cache_mode=True)
 
 for lp in wmt23_lps:
   print(">>>", lp)
