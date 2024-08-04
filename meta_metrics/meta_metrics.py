@@ -19,10 +19,11 @@ class MetaMetrics:
             weights (List[float]): a list of float weight assigned to each metric
             cache_mode: bool
     """
-    def __init__(self, metrics_configs:List[Tuple[str, dict]], weights:List[float] = None, cache_mode:bool=False):
+    def __init__(self, metrics_configs:List[Tuple[str, dict]], weights:List[float] = None, normalize:bool=False, cache_mode:bool=False):
         self.metrics_configs = metrics_configs
         self.metrics = []
         self.weights = weights
+        self.normalize = normalize
         self.cache_mode = cache_mode
 
         if self.cache_mode:
@@ -33,6 +34,25 @@ class MetaMetrics:
                 print(f"[cache mode] initialize metric: {metric_name}")
                 metric = self.get_metric(metric_name, metric_args)
                 self.metrics.append(metric)
+        
+        if self.normalize:
+            print(f"[normalize metric] {metric_name}")
+            self.normalization_config = {
+                # min, max, invert, clip
+                "bertscore": (-1.0, 1.0, False, False),
+                "yisi": (0.0, 1.0, False, False),
+                "bleurt": (0.0, 1.0, False, True),
+                "metricx": (0.0, 25.0, True, True),
+                "xcomet-xl": (0.0, 1.0, False, True, True),
+                "xcomet-xxl": (0.0, 1.0, False, True, True),
+                "cometkiwi": (0.0, 1.0, False, True, True),
+                "cometkiwi-xl": (0.0, 1.0, False, True, True),
+                "cometkiwi-xxl": (0.0, 1.0, False, True, True),
+                "gemba_mqm": (-25.0, 0.0, False, False),
+                "bleu": (0.0, 100.0, False, False),
+                "chrf": (0.0, 100.0, False, False),
+            }
+            self.EPSILON = 1e-5
 
     def get_metric(self, metric_name, metric_args):
         print(f"get metric: {metric_name}")
@@ -50,7 +70,7 @@ class MetaMetrics:
         elif metric_name == "cometkiwi":
             metric = COMETMetric(comet_model="Unbabel/wmt22-cometkiwi-da", **metric_args)
         elif metric_name == "cometkiwi-xl":
-            metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xxl", **metric_args)
+            metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xl", **metric_args)
         elif metric_name == "cometkiwi-xxl":
             metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xxl", **metric_args)
         elif metric_name == "metricx":
@@ -75,6 +95,19 @@ class MetaMetrics:
                 print(f"initialize metric: {metric_name}")
                 metric = self.get_metric(metric_name, metric_args)
             metric_score = np.array(metric.score(predictions, references, sources))
+
+            if self.normalize:
+                _min, _max, _invert, _clip = self.normalization_config[metric_name]
+                if _clip:
+                    metric_score = np.clip(metric_score, _min, _max)
+                
+                if _min - self.EPSILON <= metric_score <= _max + self.EPSILON:
+                    metric_score = np.clip(metric_score, _min, _max)
+                
+                metric_score = (metric_score - _min) / (_max - _min)
+                if _invert:
+                    metric_score = 1 - metric_score
+
             del metric # for efficiency
 
             if i == 0:
