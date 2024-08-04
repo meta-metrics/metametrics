@@ -99,6 +99,43 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 # metric_name = 'metametrics-qe'
 # metric = MetaMetrics(metrics_configs, weights=[0.9904603321616574,0.06564649056309636,0.1267047358620059,0.05844699223607353], normalize=True, cache_mode=True)
 
+###### METRICX-23-QE-XXL ######
+
+metrics_configs = [
+    ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True)
+]
+
+metric_name = 'metricx-qe-xxl'
+metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+
+###### METRICX-23-QE-LARGE ######
+
+# metrics_configs = [
+#     ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),        
+# ]
+
+# metric_name = 'metricx-qe-large'
+# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+
+###### COMETKIWI ######
+
+# metrics_configs = [
+#     ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True)     
+# ]
+
+# metric_name = 'cometkiwi'
+# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+
+###### COMETKIWI-XL ######
+
+# metrics_configs = [
+#     ("cometkiwi-xl", {"hf_token": "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", "batch_size": 1}, True)     
+# ]
+
+# metric_name = 'cometkiwi-xl'
+# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+
+
 ###### COMET ######
 
 # metrics_configs = [
@@ -119,12 +156,12 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 
 ###### XCOMET-XL ######
 
-metrics_configs = [
-    ("xcomet-xl", {"hf_token": "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", "batch_size": 4}, False)
-]
+# metrics_configs = [
+#     ("xcomet-xl", {"hf_token": "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", "batch_size": 4}, False)
+# ]
 
-metric_name = 'xcomet-xl'
-metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+# metric_name = 'xcomet-xl'
+# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
 
 for lp in wmt23_lps:
   print(">>>", lp)
