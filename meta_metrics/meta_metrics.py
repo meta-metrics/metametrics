@@ -49,6 +49,8 @@ class MetaMetrics:
             metric = COMETMetric(comet_model="Unbabel/XCOMET-XL", **metric_args)
         elif metric_name == "cometkiwi":
             metric = COMETMetric(comet_model="Unbabel/wmt22-cometkiwi-da", **metric_args)
+        elif metric_name == "cometkiwi-xl":
+            metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xxl", **metric_args)
         elif metric_name == "cometkiwi-xxl":
             metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xxl", **metric_args)
         elif metric_name == "metricx":
