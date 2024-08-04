@@ -1,179 +1,187 @@
-from bayes_opt import BayesianOptimization
-from scipy import stats
-from typing import List, Tuple
-import numpy as np
-import json
 import os
+import csv
+from meta_metrics import MetaMetrics
 
-from meta_metrics.metrics import BERTScoreMetric
-from meta_metrics.metrics import BLEURT20Metric
-from meta_metrics.metrics import COMETMetric
-from meta_metrics.metrics import MetricXMetric
-from meta_metrics.metrics import YiSiMetric
-from meta_metrics.metrics import GEMBA_MQM
+os.system("git clone https://github.com/google-research/mt-metrics-eval.git && cd mt-metrics-eval && pip install .")
 
-class MetaMetrics:
-    """
-        Args:
-            metrics_configs (List[Tuple[str, dict]]): a list of tuple of metric with the metric name and arguments.
-            weights (List[float]): a list of float weight assigned to each metric
-            cache_mode: bool
-    """
-    def __init__(self, metrics_configs:List[Tuple[str, dict]], weights:List[float] = None, normalize:bool=False, cache_mode:bool=False):
-        self.metrics_configs = metrics_configs
-        self.metrics = []
-        self.weights = weights
-        self.normalize = normalize
-        self.cache_mode = cache_mode
+# @title Imports
 
-        if self.cache_mode:
-            for i in range(len(self.metrics_configs)):
-                metric_config = self.metrics_configs[i]
-                metric_name = metric_config[0]
-                metric_args = metric_config[1]
-                print(f"[cache mode] initialize metric: {metric_name}")
-                metric = self.get_metric(metric_name, metric_args)
-                self.metrics.append(metric)
-        
-        if self.normalize:
-            print(f"[normalize metric] {metric_name}")
-            self.normalization_config = {
-                # min, max, invert, clip
-                "bertscore": (-1.0, 1.0, False, False),
-                "yisi": (0.0, 1.0, False, False),
-                "bleurt": (0.0, 1.0, False, True),
-                "metricx": (0.0, 25.0, True, True),
-                "comet": (0.0, 1.0, False, True),
-                "xcomet-xl": (0.0, 1.0, False, True),
-                "xcomet-xxl": (0.0, 1.0, False, True),
-                "cometkiwi": (0.0, 1.0, False, True),
-                "cometkiwi-xl": (0.0, 1.0, False, True),
-                "cometkiwi-xxl": (0.0, 1.0, False, True),
-                "gemba_mqm": (-25.0, 0.0, False, False),
-                "bleu": (0.0, 100.0, False, False),
-                "chrf": (0.0, 100.0, False, False),
-            }
-            self.EPSILON = 1e-5
+from mt_metrics_eval import meta_info
+from mt_metrics_eval import data
+from mt_metrics_eval import tasks
 
-    def get_metric(self, metric_name, metric_args):
-        print(f"get metric: {metric_name}")
-        metric = None
-        if metric_name == "bertscore":
-            metric = BERTScoreMetric(**metric_args)
-        elif metric_name == "bleurt":
-            metric = BLEURT20Metric()
-        elif metric_name == "comet":
-            metric = COMETMetric(comet_model="Unbabel/wmt22-comet-da", **metric_args)
-        elif metric_name == "xcomet-xxl":
-            metric = COMETMetric(comet_model="Unbabel/XCOMET-XXL", **metric_args)
-        elif metric_name == "xcomet-xl":
-            metric = COMETMetric(comet_model="Unbabel/XCOMET-XL", **metric_args)
-        elif metric_name == "cometkiwi":
-            metric = COMETMetric(comet_model="Unbabel/wmt22-cometkiwi-da", **metric_args)
-        elif metric_name == "cometkiwi-xl":
-            metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xl", **metric_args)
-        elif metric_name == "cometkiwi-xxl":
-            metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xxl", **metric_args)
-        elif metric_name == "metricx":
-            metric = MetricXMetric(**metric_args)
-        elif metric_name == "yisi":
-            metric = YiSiMetric(**metric_args)
-        elif metric_name =="gemba_mqm":
-            metric = GEMBA_MQM(**metric_args)
-        return metric
+# @title Download data
 
-    def score(self, predictions:List[str], references:List[str], sources: List[str] = None) -> List[float]:
-        overall_metric_score = None
-        for i in range(len(self.metrics_configs)):
-            metric_config = self.metrics_configs[i]
-            metric_name = metric_config[0]
-            metric_args = metric_config[1]
+data.Download()  # Copies about 2G onto local machine.
 
-            if self.cache_mode:
-                print(f"[cache mode] get metric: {metric_name}")
-                metric = self.metrics[i]
-            else:
-                print(f"initialize metric: {metric_name}")
-                metric = self.get_metric(metric_name, metric_args)
-            metric_score = np.array(metric.score(predictions, references, sources))
+# @title Define the metric
 
-            if self.normalize:
-                _min, _max, _invert, _clip = self.normalization_config[metric_name]
-                if _clip:
-                    metric_score = np.clip(metric_score, _min, _max)
-                
-                if (_min - self.EPSILON <= metric_score).any() and (metric_score <= _max + self.EPSILON).any():
-                    metric_score = np.clip(metric_score, _min, _max)
-                
-                metric_score = (metric_score - _min) / (_max - _min)
-                if _invert:
-                    metric_score = 1 - metric_score
+import numpy as np
 
-            del metric # for efficiency
+# Replace this function with your own metric.
 
-            if i == 0:
-                overall_metric_score = metric_score * self.weights[i]
-            else:
-                overall_metric_score += metric_score * self.weights[i]
-        return overall_metric_score
+def NewMetric(
+    # level: str,
+    metric,
+    lp: str,
+    domains: dict[str, list[list[int]]],
+    docs: dict[str, list[int]],
+    src: list[str],
+    ref: list[str],
+    hyps: dict[list[str]]
+) -> dict[str, list[float]]:
+  """
+  Generate metric scores.
+
+  Args:
+    # level: Level for which to produce scores, 'sys' or 'seg'.
+    lp: Language pair, eg 'en-de'.
+    domains: Map from domain name to [[beg, end+1], ...] segment position lists.
+    docs: Map from doc name to [beg, end+1] segment positions.
+    src: List of source segments.
+    ref: List of reference segments.
+    hyps: Map from MT system name to output segments for that system.
+
+  Returns:
+    Map from system name to scores, a list of segment-level scores if level is
+    'seg', or a list containing a single score if level is 'sys'.
+  """
+  # Sample metric just computes a length match between each hypothesis and the
+  # reference. It ignores lp, domains, docs, and source.
+
+  del lp, domains, docs
+
+  segment_scores = {}
+  system_scores = {}
+  count = 0
+  
+  for sysname, hyp in hyps.items():
+    count += 1
+    print(f"######### {count} of {len(hyps)}")
+    outputs = np.array(metric.score(hyp, ref, src))
+
+    segment_scores[sysname] = outputs
+    system_scores[sysname] = [outputs.mean()]
+
+  return segment_scores, system_scores
+
+# @title Load EvalSets
+
+wmt23_lps = ['en-de', 'he-en', 'zh-en']
+evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
+
+# @title Add metric scores to EvalSets
+
+# Compute scores for each language pair, and add to the appropriate EvalSet.
+# Setting replace=True makes this work if we want to iterate over different
+# versions of the metric.
+
+###### METAMETRICS ######
+
+# metrics_configs = [
+#     ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
+#     ("comet", {"hf_token": "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", "batch_size": 8}, False),
+#     ("xcomet-xl", {"hf_token": "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", "batch_size": 4}, False)
+# ]
+
+# metric_name = 'metametrics'
+# metric = MetaMetrics(metrics_configs, weights=[1,0.2055307813370211,0.27327721603913696], normalize=True, cache_mode=True)
+
+###### METAMETRICS-QE ######
+
+# metrics_configs = [
+#     ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),
+#     ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),        
+#     ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True),
+#     ("cometkiwi-xl", {"hf_token": "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", "batch_size": 1}, True),
+# ]
+
+# metric_name = 'metametrics-qe'
+# metric = MetaMetrics(metrics_configs, weights=[0.9904603321616574,0.06564649056309636,0.1267047358620059,0.05844699223607353], normalize=True, cache_mode=True)
+
+###### COMET ######
+
+# metrics_configs = [
+#     ("comet", {"hf_token": "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", "batch_size": 8}, False),
+# ]
+
+# metric_name = 'comet'
+# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+
+###### MetricX ######
+
+# metrics_configs = [
+#     ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
+# ]
+
+# metric_name = 'metricx-23-xxl'
+# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+
+###### XCOMET-XL ######
+
+metrics_configs = [
+    ("xcomet-xl", {"hf_token": "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", "batch_size": 4}, False)
+]
+
+metric_name = 'xcomet-xl'
+metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+
+for lp in wmt23_lps:
+  print(">>>", lp)
+  evs = evs_dict[('wmt23', lp)]
+
+  with open(f"wmt23_outputs/{metric_name}_scores_{lp}_segment.tsv", "w+") as f_out_segment:
+    with open(f"wmt23_outputs/{metric_name}_scores_{lp}_system.tsv", "w+") as f_out_system:
+        writer = csv.writer(f_out_segment, delimiter='\t')
+        writer_system = csv.writer(f_out_system, delimiter='\t')
+        print(">>>>>>>>", len(evs.all_refs))
+        writer.writerow(["refname","sys_name","lp","segment_id","src","ref","mt","score"])
+        writer_system.writerow(["refname","sys_name","lp","score"])
+        for refname, ref in evs.all_refs.items():
+            print(">>>>>", refname)
+            seg_scores, sys_scores = NewMetric(metric, evs.lp, evs.domains, evs.docs, evs.src, ref, evs.sys_outputs)
+            evs.AddMetric(metric_name, {refname}, 'sys', sys_scores, replace=True)
+            evs.AddMetric(metric_name, {refname}, 'seg', seg_scores, replace=True)
+            for sys_name in sys_scores:
+                writer_system.writerow([refname, sys_name, evs.lp, sys_scores[sys_name][0]])
+            
+            for sys_name in seg_scores:
+                for _id in range(len(seg_scores[sys_name])):
+                    writer.writerow([refname, sys_name, evs.lp, _id, evs.src[_id], ref[_id], evs.sys_outputs[sys_name][_id], seg_scores[sys_name][_id]])
+
+# Add new metric to the primary lists, so it will get picked up when tasks get
+# run with primary=True (avoiding having to evaluate all contrastive
+# submissions as well).
+
+for evs in evs_dict.values():
+  evs.SetPrimaryMetrics(evs.primary_metrics | {metric_name})
 
 
-    def calibrate(self, method_name, sources, predictions, references, human_scores, optimizer_args, corr_metric="kendall", cache_key = None):
-        cache = {}
-        cache_file_path = 'meta-metrics_cache.json'
-        if cache_key is not None:
-            if not os.path.isfile(cache_file_path):
-                with open(cache_file_path, 'w+') as f:
-                    json.dump(cache, f)
-            with open(cache_file_path, 'r') as f:
-                cache_file = json.load(f)
-                cache = cache_file
-        
-        if method_name == "GP":
-            def black_box_function(**kwargs):
-                metric_score = 0
-                for i, (src, pred, ref, score) in enumerate(zip(sources, predictions, references, human_scores)):
-                    key_name = cache_key[i][0]
-                    for k in range(len(self.metrics_configs)):
-                        metric_name = self.metrics_configs[k][0]
-                        if str((key_name, metric_name)) not in cache:
-                            metric_score = np.array(self.metrics[k].score(pred, ref, src))
-                            cache[str((key_name, metric_name))] = metric_score.tolist()
-                            if cache_key is not None:
-                                cache_file = cache
-                                with open(cache_file_path, 'w') as f:
-                                    json.dump(cache_file, f)
-                                print(str((key_name, metric_name)))
-                    metric_res = 0
-                    for k in range(len(self.metrics_configs)):
-                        metric_name = self.metrics_configs[k][0]
-                        metric_res += kwargs[metric_name] * np.array(cache[str((key_name, metric_name))])
-                    if corr_metric == "kendall":
-                        kendall = stats.kendalltau(metric_res, score)
-                        # print(kendall.statistic)
-                        metric_score += kendall.statistic
-                    else:
-                        pass
-                print(metric_score.mean())
-                return metric_score
+# @title Generate results with new metric
 
-            # Bounded region of parameter space
-            pbounds = {}
-            for i in range(len(self.metrics)):
-                pbounds[f"{self.metrics_configs[i][0]}"] = (0,1)
+# For a first pass we turn off significance testing.
 
-            optimizer = BayesianOptimization(
-                f=black_box_function,
-                pbounds=pbounds,
-                random_state=1,
-            )
-            optimizer.maximize(
-                init_points=optimizer_args["init_points"],
-                n_iter=optimizer_args["n_iter"],
-            )
-            self.weights = []
-            for i in range(len(self.metrics_configs)):
-                metric_name = self.metrics_configs[i][0]
-                self.weights.append(optimizer.max["params"][metric_name])
-            print("weights:", self.weights)
-            return self.weights
+wmt23_tasks, wts = tasks.WMT23(wmt23_lps, k=0)
+
+# Takes about 3 minutes.
+new_results = wmt23_tasks.Run(eval_set_dict=evs_dict)
+
+# @title Print results
+
+# Results show all primary metrics, along with the new 'lendiff' metric.
+
+avg_corrs = new_results.AverageCorrs(wts)
+
+table = new_results.Table(
+    metrics=list(avg_corrs),
+    initial_column=avg_corrs,
+    initial_column_header='avg-corr',
+    attr_list=['lang', 'level', 'corr_fcn'],
+    nicknames={'KendallWithTiesOpt': 'acc-t'},
+    fmt='text',
+    baselines_metainfo=meta_info.WMT23)
+
+print(table)
+
+with open(f"wmt23_outputs/{metric_name}_outputs.txt", "w") as f:
+    f.write(str(table))
