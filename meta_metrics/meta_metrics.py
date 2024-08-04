@@ -43,11 +43,12 @@ class MetaMetrics:
                 "yisi": (0.0, 1.0, False, False),
                 "bleurt": (0.0, 1.0, False, True),
                 "metricx": (0.0, 25.0, True, True),
-                "xcomet-xl": (0.0, 1.0, False, True, True),
-                "xcomet-xxl": (0.0, 1.0, False, True, True),
-                "cometkiwi": (0.0, 1.0, False, True, True),
-                "cometkiwi-xl": (0.0, 1.0, False, True, True),
-                "cometkiwi-xxl": (0.0, 1.0, False, True, True),
+                "comet": (0.0, 1.0, False, True),
+                "xcomet-xl": (0.0, 1.0, False, True),
+                "xcomet-xxl": (0.0, 1.0, False, True),
+                "cometkiwi": (0.0, 1.0, False, True),
+                "cometkiwi-xl": (0.0, 1.0, False, True),
+                "cometkiwi-xxl": (0.0, 1.0, False, True),
                 "gemba_mqm": (-25.0, 0.0, False, False),
                 "bleu": (0.0, 100.0, False, False),
                 "chrf": (0.0, 100.0, False, False),
@@ -101,7 +102,7 @@ class MetaMetrics:
                 if _clip:
                     metric_score = np.clip(metric_score, _min, _max)
                 
-                if _min - self.EPSILON <= metric_score <= _max + self.EPSILON:
+                if (_min - self.EPSILON <= metric_score).any() and (metric_score <= _max + self.EPSILON).any():
                     metric_score = np.clip(metric_score, _min, _max)
                 
                 metric_score = (metric_score - _min) / (_max - _min)
