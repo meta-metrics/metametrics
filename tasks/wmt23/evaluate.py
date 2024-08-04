@@ -119,21 +119,21 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 
 ###### COMETKIWI ######
 
-metrics_configs = [
-    ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True)     
-]
+# metrics_configs = [
+#     ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True)     
+# ]
 
-metric_name = 'cometkiwi-qe'
-metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+# metric_name = 'cometkiwi-qe'
+# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
 
 ###### COMETKIWI-XL ######
 
-# metrics_configs = [
-#     ("cometkiwi-xl", {"hf_token": "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", "batch_size": 1}, True)     
-# ]
+metrics_configs = [
+    ("cometkiwi-xl", {"hf_token": "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", "batch_size": 1}, True)     
+]
 
-# metric_name = 'cometkiwi-xl-qe'
-# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+metric_name = 'cometkiwi-xl-qe'
+metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
 
 
 ###### COMET ######
