@@ -101,12 +101,12 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 
 ###### METRICX-23-QE-XXL ######
 
-metrics_configs = [
-    ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True)
-]
+# metrics_configs = [
+#     ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True)
+# ]
 
-metric_name = 'metricx-qe-xxl'
-metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+# metric_name = 'metricx-qe-xxl'
+# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
 
 ###### METRICX-23-QE-LARGE ######
 
@@ -119,12 +119,12 @@ metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=Tr
 
 ###### COMETKIWI ######
 
-# metrics_configs = [
-#     ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True)     
-# ]
+metrics_configs = [
+    ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True)     
+]
 
-# metric_name = 'cometkiwi'
-# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+metric_name = 'cometkiwi-qe'
+metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
 
 ###### COMETKIWI-XL ######
 
@@ -132,7 +132,7 @@ metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=Tr
 #     ("cometkiwi-xl", {"hf_token": "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", "batch_size": 1}, True)     
 # ]
 
-# metric_name = 'cometkiwi-xl'
+# metric_name = 'cometkiwi-xl-qe'
 # metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
 
 
