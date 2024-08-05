@@ -36,7 +36,7 @@ class MetaMetrics:
                 self.metrics.append(metric)
         
         if self.normalize:
-            print(f"[normalize metric] {metric_name}")
+            print(f"[normalize metric]")
             self.normalization_config = {
                 # min, max, invert, clip
                 "bertscore": (-1.0, 1.0, False, False),
