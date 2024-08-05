@@ -87,7 +87,7 @@ metrics_configs = [
 ]
 
 metric_name = 'metametrics-lang-en-de'
-metric = MetaMetrics(metrics_configs, weights=[0.07846899196286322,1,0.11298164043250505,0.121408619349021,0.17522337499431634], normalize=True, cache_mode=True)
+metric = MetaMetrics(metrics_configs, weights=[0.07846899196286322,1,0.11298164043250505,0.121408619349021,0.17522337499431634], normalize=True)
 
 ###### METAMETRICS ######
 
