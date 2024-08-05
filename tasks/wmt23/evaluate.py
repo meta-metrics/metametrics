@@ -87,6 +87,39 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 # metric_name = 'metametrics'
 # metric = MetaMetrics(metrics_configs, weights=[1,0.2055307813370211,0.27327721603913696], normalize=True, cache_mode=True)
 
+###### METAMETRICS-EN-SOURCE ######
+
+metrics_configs = [
+    ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "precision", "batch_size": 4}, False),
+    ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
+    ("comet", {"hf_token": "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", "batch_size": 8}, False),
+    ("xcomet-xl", {"hf_token": "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", "batch_size": 4}, False)
+]
+
+metric_name = 'metametrics-en-source'
+metric = MetaMetrics(metrics_configs, weights=[1,1,1,1], normalize=True, cache_mode=True)
+
+# bertscore_precision 1
+# metricx-23-xxl-v2p0 1
+# wmt22-comet-da 1
+# xcomet-xl 1
+
+
+###### METAMETRICS-EN-TARGET ######
+
+# metrics_configs = [
+#     ("metricx", {"model_name": "google/metricx-23-xl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, False),
+#     ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
+#     ("xcomet-xl", {"hf_token": "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", "batch_size": 4}, False)
+# ]
+
+# metric_name = 'metametrics-en-target'
+# metric = MetaMetrics(metrics_configs, weights=[0.16295300667868262,1,1], normalize=True, cache_mode=True)
+
+# metricx-23-xl-v2p00.16295300667868262
+# metricx-23-xxl-v2p01
+# xcomet-xl1
+
 ###### METAMETRICS-QE ######
 
 # metrics_configs = [
@@ -128,12 +161,12 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 
 ###### COMETKIWI-XL ######
 
-metrics_configs = [
-    ("cometkiwi-xl", {"hf_token": "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", "batch_size": 1}, True)     
-]
+# metrics_configs = [
+#     ("cometkiwi-xl", {"hf_token": "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", "batch_size": 1}, True)     
+# ]
 
-metric_name = 'cometkiwi-xl-qe'
-metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
+# metric_name = 'cometkiwi-xl-qe'
+# metric = MetaMetrics(metrics_configs, weights=[1], normalize=True, cache_mode=True)
 
 
 ###### COMET ######
