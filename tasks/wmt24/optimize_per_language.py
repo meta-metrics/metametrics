@@ -5,9 +5,7 @@ import json
 
 import pandas as pd
 
-def run(df):
-    language = "en-de"
-    
+def run(df, language):
     metric_scores = {}
     df = df[df["lp"]==language]
     human_scores = df['human_score'].to_list()
@@ -66,12 +64,14 @@ def run(df):
     
     return optimizer.max
 
+language = "en-de"
+
 df1 = pd.read_csv('all/wmt-sqm-human-evaluation_score_final_scaled.csv')
 df2 = pd.read_csv('all/wmt-mqm-human-evaluation_score_final_scaled.csv')
 df3 = pd.read_csv('all/wmt-da-human-evaluation_score_final_scaled.csv')
 combined_df = pd.concat([df1, df2, df3], axis=0, ignore_index=True)
 
-res = {"sqm": run(df1), "mqm": run(df2), "da": run(df3), "combined": run(combined_df)}
+res = {"sqm": run(df1,language), "mqm": run(df2,language), "da": run(df3,language), "combined": run(combined_df,language)}
 
-with open("en_de_results_with_references.json", "w+") as f:
+with open(f"results_{language}_with_references.json", "w+") as f:
     json.dump(res, f, indent = 2)
