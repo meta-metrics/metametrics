@@ -10,6 +10,8 @@ from mt_metrics_eval import meta_info
 from mt_metrics_eval import data
 from mt_metrics_eval import tasks
 
+os.system("mkdir -p wmt23_outputs")
+
 # @title Download data
 
 data.Download()  # Copies about 2G onto local machine.
