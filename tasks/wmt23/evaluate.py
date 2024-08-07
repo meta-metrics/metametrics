@@ -89,15 +89,15 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 
 ###### METAMETRICS-EN-SOURCE ######
 
-metrics_configs = [
-    ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "precision", "batch_size": 4}, False),
-    ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
-    ("comet", {"hf_token": "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", "batch_size": 8}, False),
-    ("xcomet-xl", {"hf_token": "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", "batch_size": 4}, False)
-]
+# metrics_configs = [
+#     ("bertscore", {"model_name": "microsoft/deberta-xlarge-mnli", "model_metric": "precision", "batch_size": 4}, False),
+#     ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
+#     ("comet", {"hf_token": "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", "batch_size": 8}, False),
+#     ("xcomet-xl", {"hf_token": "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", "batch_size": 4}, False)
+# ]
 
-metric_name = 'metametrics-en-source'
-metric = MetaMetrics(metrics_configs, weights=[1,1,1,1], normalize=True, cache_mode=True)
+# metric_name = 'metametrics-en-source'
+# metric = MetaMetrics(metrics_configs, weights=[1,1,1,1], normalize=True, cache_mode=True)
 
 # bertscore_precision 1
 # metricx-23-xxl-v2p0 1
@@ -131,6 +131,38 @@ metric = MetaMetrics(metrics_configs, weights=[1,1,1,1], normalize=True, cache_m
 
 # metric_name = 'metametrics-qe'
 # metric = MetaMetrics(metrics_configs, weights=[0.9904603321616574,0.06564649056309636,0.1267047358620059,0.05844699223607353], normalize=True, cache_mode=True)
+
+###### METAMETRICS-QE-EN-SOURCE ######
+
+# metrics_configs = [
+#     ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),
+#     ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True),
+#     ("cometkiwi-xl", {"hf_token": "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", "batch_size": 1}, True),
+# ]
+
+# metric_name = 'metametrics-qe-en-source'
+# metric = MetaMetrics(metrics_configs, weights=[0.9206599602022377,0.22511976200589023,0.05474087559603472], normalize=True, cache_mode=True)
+
+# metricx-23-qe-xxl-v2p0_reference_free0.9206599602022377
+# wmt22-cometkiwi-da_reference_free0.22511976200589023
+# wmt23-cometkiwi-da-xl_reference_free0.05474087559603472
+
+###### METAMETRICS-QE-EN-TARGET ######
+
+metrics_configs = [
+    ("gemba_mqm", {"model": "gpt-4o-mini"}, True),
+    ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),    
+    ("metricx", {"model_name": "google/metricx-23-qe-xl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, True),
+    ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),
+]
+
+metric_name = 'metametrics-qe-en-target'
+metric = MetaMetrics(metrics_configs, weights=[0.06460795131265709,0.25352367596996267,0.03973703688652602,1], normalize=True)
+
+# GEMBA_score0.06460795131265709
+# metricx-23-qe-large-v2p0_reference_free0.25352367596996267
+# metricx-23-qe-xl-v2p0_reference_free0.03973703688652602
+# metricx-23-qe-xxl-v2p0_reference_free1
 
 ###### METRICX-23-QE-XXL ######
 
