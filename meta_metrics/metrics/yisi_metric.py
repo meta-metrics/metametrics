@@ -1,94 +1,103 @@
-from typing import List, Union, Dict, Tuple
-from .base_metric import BaseMetric
 import torch
+import torch.nn as nn
 from transformers import AutoTokenizer, AutoModel
+from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
+from typing import List, Dict, Union
+from tqdm import tqdm
 
-class YiSiGraph:
-    def __init__(self, ref: str, hyp: str, ref_embedding, hyp_embedding):
-        self.ref = ref
-        self.hyp = hyp
-        
-        self.ref_embedding = ref_embedding
-        self.hyp_embedding = hyp_embedding
-
-    def _cosine_similarity(self, vec1: torch.Tensor, vec2: torch.Tensor) -> float:
-        return torch.nn.functional.cosine_similarity(vec1.unsqueeze(0), vec2.unsqueeze(0)).item()
-
-    def get_token_similarities(self) -> torch.Tensor:
-        # Compute the cosine similarity between each token in reference and hypothesis
-        similarities = torch.matmul(self.ref_embedding, self.hyp_embedding.T)
-        similarities = similarities / (torch.norm(self.ref_embedding, dim=1).unsqueeze(1) * torch.norm(self.hyp_embedding, dim=1))
-        return similarities
-
-class YiSiMetric(BaseMetric):
-    def __init__(self, model_name: str = 'bert-base-multilingual-cased', alpha: float = 0.8):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+class YiSiModel(nn.Module):
+    def __init__(self, model_name='bert-base-multilingual-cased', idf_weights: Dict[int, float] = None):
+        super(YiSiModel, self).__init__()
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModel.from_pretrained(model_name).to(self.device)
-        self.model.eval()
+        self.bert_model = AutoModel.from_pretrained(model_name)
+        self.idf_weights = idf_weights
+
+    def get_token_embeddings(self, input_ids, attention_mask):
+        with torch.no_grad():
+            outputs = self.bert_model(input_ids=input_ids, attention_mask=attention_mask)
+        embeddings = outputs.last_hidden_state
+        return embeddings
+
+    def compute_cosine_similarity_matrix(self, embeddings1, embeddings2):
+        norm1 = embeddings1.norm(dim=2, keepdim=True)
+        norm2 = embeddings2.norm(dim=2, keepdim=True)
+        cos_sim_matrix = torch.bmm(embeddings1, embeddings2.transpose(1, 2)) / (norm1 * norm2.transpose(1, 2))
+        return cos_sim_matrix
+
+    def compute_weighted_pool(self, similarities, input_ids):
+        idf_weights = torch.FloatTensor([[self.idf_weights.get(tok.item(), 1.0) for tok in seq] for seq in input_ids]).to(input_ids.device)
+        weighted_sum = torch.bmm(similarities.unsqueeze(1), idf_weights.unsqueeze(2)).squeeze(-1)
+        total_weight = idf_weights.sum(dim=1, keepdim=True)
+        return weighted_sum / total_weight
+
+    def forward(self, pred_input_ids, pred_attention_mask, ref_input_ids, ref_attention_mask):
+        # Get embeddings
+        pred_embeddings = self.get_token_embeddings(pred_input_ids, pred_attention_mask)
+        ref_embeddings = self.get_token_embeddings(ref_input_ids, ref_attention_mask)
+
+        # Compute cosine similarity matrix
+        cos_sim_matrix = self.compute_cosine_similarity_matrix(pred_embeddings, ref_embeddings)
+
+        # Get maximum similarity for each token in prediction and reference sentences
+        max_similarities_pred, _ = cos_sim_matrix.max(dim=2)
+        max_similarities_ref, _ = cos_sim_matrix.max(dim=1)
+
+        # Compute weighted pool for prediction and reference tokens
+        weighted_pool_pred = self.compute_weighted_pool(max_similarities_pred, pred_input_ids)
+        weighted_pool_ref = self.compute_weighted_pool(max_similarities_ref, ref_input_ids)
+
+        return weighted_pool_pred, weighted_pool_ref
+
+class YiSiMetric:
+    def __init__(self, model_name: str = 'bert-base-multilingual-cased', alpha: float = 0.8, batch_size=64, max_input_length=512, device='cuda'):
         self.model_name = model_name
         self.alpha = alpha
+        self.batch_size = batch_size
+        self.max_input_length = max_input_length
+        self.device = torch.device(device if torch.cuda.is_available() else 'cpu')
 
-    def _get_token_embeddings(self, text: List[str]) -> torch.Tensor:
-        inputs = self.tokenizer(text, return_tensors='pt', truncation=True, padding=True, max_length=512).to(self.device)
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-        token_embeddings = outputs.last_hidden_state  # shape (no_sentence, sequence_length, hidden_size)
-        return token_embeddings
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = YiSiModel(model_name=model_name).to(self.device)
 
     def _compute_idf(self, documents: List[str]) -> Dict[str, float]:
-        idf = {}
-        total_docs = len(documents)
-        all_words = set(word for sentence in documents for word in self.tokenizer.tokenize(sentence))
-        for word in all_words:
-            count = sum(1 for sentence in documents if word in self.tokenizer.tokenize(sentence))
-            idf[word] = np.log((total_docs + 1) / (count + 1)) + 1
-        return idf
+        tf = TfidfVectorizer(
+            analyzer='word',
+            ngram_range=(1, 1),
+            tokenizer=self.tokenizer.tokenize,
+            token_pattern=None
+        ).fit(documents)
 
-    def _compute_features(self, 
-                          prediction: str, 
-                          reference: str,
-                          prediction_embedding, 
-                          reference_embedding,
-                          idf_weights: Dict[str, float]) -> Tuple[float, float]:
-        yisigraph = YiSiGraph(reference, prediction, reference_embedding, prediction_embedding)
-        token_similarities = yisigraph.get_token_similarities()
+        return {self.tokenizer.convert_tokens_to_ids([tok])[0]: tf.idf_[tf.vocabulary_[tok]] for tok in tf.vocabulary_.keys()}
 
-        precision = 0.0
-        recall = 0.0
+    def tokenize(self, texts: List[str]):
+        return self.tokenizer(texts, padding=True, truncation=True, return_tensors='pt', max_length=self.max_input_length).to(self.device)
 
-        pred_tokens = self.tokenizer.tokenize(prediction)
-        ref_tokens = self.tokenizer.tokenize(reference)
-        
-        weight_pred = sum(idf_weights.get(token, 0) for token in pred_tokens)
-        weight_ref = sum(idf_weights.get(token, 0) for token in ref_tokens)
-
-        # Compute precision
-        for i, pred_token in enumerate(pred_tokens):
-            max_weighted_sim = max(token_similarities[:, i] * idf_weights.get(pred_token, 0))
-            precision += max_weighted_sim
-        
-        # Compute recall
-        for j, ref_token in enumerate(ref_tokens):
-            max_weighted_sim = max(token_similarities[j, :] * idf_weights.get(ref_token, 0))
-            recall += max_weighted_sim
-
-        precision /= weight_pred if weight_pred > 0 else 1
-        recall /= weight_ref if weight_ref > 0 else 1
-        
-        return precision, recall
-
-    def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
+    def score(self, predictions: List[str], references: Union[None, List[str]]=None, sources: Union[None, List[str]]=None) -> List[float]:
         idf_weights = self._compute_idf(predictions + references)
-        pred_embeddings = self._get_token_embeddings(predictions)
-        ref_embeddings = self._get_token_embeddings(references)
-        
+        self.model.idf_weights = idf_weights
+
         scores = []
-        for pred, ref, pred_e, ref_e in zip(predictions, references, pred_embeddings, ref_embeddings):
-            precision, recall = self._compute_features(pred, ref, pred_e, ref_e, idf_weights)
-            
-            score = (precision * recall) / (self.alpha * precision + (1 - self.alpha) * recall)
-            scores.append(score.item())
-        
+
+        for start_idx in tqdm(range(0, len(predictions), self.batch_size), desc="Scoring", ncols=100):
+            end_idx = min(start_idx + self.batch_size, len(predictions))
+            batch_predictions = predictions[start_idx:end_idx]
+            batch_references = references[start_idx:end_idx]
+
+            pred_inputs = self.tokenize(batch_predictions)
+            ref_inputs = self.tokenize(batch_references)
+
+            weighted_pool_pred, weighted_pool_ref = self.model(
+                pred_input_ids=pred_inputs['input_ids'],
+                pred_attention_mask=pred_inputs['attention_mask'],
+                ref_input_ids=ref_inputs['input_ids'],
+                ref_attention_mask=ref_inputs['attention_mask']
+            )
+
+            for precision, recall in zip(weighted_pool_pred, weighted_pool_ref):
+                precision = precision.item()
+                recall = recall.item()
+                score = (precision * recall) / (self.alpha * precision + (1 - self.alpha) * recall)
+                scores.append(score)
+
         return scores

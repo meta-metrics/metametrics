@@ -1,4 +1,4 @@
-from .base_metric import BaseMetric
+from meta_metrics.metrics.base_metric import BaseMetric
 from huggingface_hub import login
 from comet import download_model, load_from_checkpoint
 
