@@ -3,8 +3,10 @@ from meta_metrics.metrics.utils.metricx import *
 import json
 from torch.utils.data import Dataset
 from typing import Dict, List, Union
+
 import datasets
 import os
+
 import torch
 import transformers
 import uuid
@@ -20,6 +22,7 @@ class MetricXMetric(BaseMetric):
             self.model = MT5ForRegression.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         else:
             self.model = MT5ForRegression.from_pretrained(model_name)
+
         self.max_input_length = max_input_length
 
         if torch.cuda.is_available():
@@ -50,6 +53,11 @@ class MetricXMetric(BaseMetric):
                 args=self.training_args,
                 data_collator = data_collator
             )
+
+        self.trainer = transformers.Trainer(
+            model=self.model,
+            args=self.training_args,
+        )
 
     def get_dataset(self, sources:Union[List[str], None], hypothesis:List[str], references:List[str]):
         """Gets the test dataset for prediction.

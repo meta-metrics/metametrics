@@ -5,6 +5,7 @@ from meta_metrics.metrics.GEMBA.gemba.gpt_api import GptApi
 from meta_metrics.metrics.GEMBA.gemba.CREDENTIALS import credentials
 from meta_metrics.metrics.GEMBA.gemba.gemba_mqm_utils import TEMPLATE_GEMBA_MQM, apply_template, parse_mqm_answer
 
+
 from meta_metrics.metrics.base_metric import BaseMetric
 
 class GEMBA_MQM(BaseMetric):
