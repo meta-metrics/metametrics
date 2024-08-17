@@ -10,7 +10,8 @@ from mt_metrics_eval import meta_info
 from mt_metrics_eval import data
 from mt_metrics_eval import tasks
 
-os.system("mkdir -p wmt23_outputs")
+objective = "pearson"
+os.system(f"mkdir -p wmt23_outputs/{objective}")
 
 # @title Download data
 
@@ -77,6 +78,27 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 # Compute scores for each language pair, and add to the appropriate EvalSet.
 # Setting replace=True makes this work if we want to iterate over different
 # versions of the metric.
+
+#########################
+###### PEARSON ##########
+#########################
+
+###### METAMETRICS ######
+
+metrics_configs = [
+    ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
+    ("comet", {"hf_token": "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", "batch_size": 8}, False),
+]
+
+metric_name = 'metametrics'
+metric = MetaMetrics(metrics_configs, weights=[0.7847653360190587,1], normalize=True, cache_mode=True)
+
+# metricx-23-xxl-v2p0
+# wmt22-comet-da1
+
+#########################
+###### KENDALL ##########
+#########################
 
 ###### METAMETRICS ######
 
@@ -151,15 +173,15 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 
 ###### METAMETRICS-QE-EN-TARGET ######
 
-metrics_configs = [
-    ("gemba_mqm", {"model": "gpt-4o-mini"}, True),
-    ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),    
-    ("metricx", {"model_name": "google/metricx-23-qe-xl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, True),
-    ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),
-]
+# metrics_configs = [
+#     ("gemba_mqm", {"model": "gpt-4o-mini"}, True),
+#     ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),    
+#     ("metricx", {"model_name": "google/metricx-23-qe-xl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, True),
+#     ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),
+# ]
 
-metric_name = 'metametrics-qe-en-target'
-metric = MetaMetrics(metrics_configs, weights=[0.06460795131265709,0.25352367596996267,0.03973703688652602,1], normalize=True)
+# metric_name = 'metametrics-qe-en-target'
+# metric = MetaMetrics(metrics_configs, weights=[0.06460795131265709,0.25352367596996267,0.03973703688652602,1], normalize=True)
 
 # GEMBA_score0.06460795131265709
 # metricx-23-qe-large-v2p0_reference_free0.25352367596996267
@@ -234,8 +256,8 @@ for lp in wmt23_lps:
   print(">>>", lp)
   evs = evs_dict[('wmt23', lp)]
 
-  with open(f"wmt23_outputs/{metric_name}_scores_{lp}_segment.tsv", "w+") as f_out_segment:
-    with open(f"wmt23_outputs/{metric_name}_scores_{lp}_system.tsv", "w+") as f_out_system:
+  with open(f"wmt23_outputs/{objective}/{metric_name}_scores_{lp}_segment.tsv", "w+") as f_out_segment:
+    with open(f"wmt23_outputs/{objective}/{metric_name}_scores_{lp}_system.tsv", "w+") as f_out_system:
         writer = csv.writer(f_out_segment, delimiter='\t')
         writer_system = csv.writer(f_out_system, delimiter='\t')
         print(">>>>>>>>", len(evs.all_refs))

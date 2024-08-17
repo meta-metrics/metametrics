@@ -5,7 +5,7 @@ import json
 
 import pandas as pd
 
-def run(df):
+def run(df, objective="kendall"):
     metric_scores = {}
     human_scores = df['human_score'].to_list()
     df = df.drop(columns=['lp', 'domain', 'year', 'id', 'human_score'])
@@ -47,8 +47,16 @@ def run(df):
             count += 1
     
         # calculate kendall
-        kendall_score = stats.kendalltau(human_scores, final_metric_scores)
-        return kendall_score.correlation
+        if objective == "kendall":
+            kendall_score = stats.kendalltau(human_scores, final_metric_scores)
+            return kendall_score.correlation
+        elif objective == "pearson":
+            res = stats.pearsonr(human_scores, final_metric_scores)
+            return res.statistic
+        elif objective == "kendall_pearson":
+            kendall_score = stats.kendalltau(human_scores, final_metric_scores)
+            pearson_score = stats.pearsonr(human_scores, final_metric_scores)
+            return kendall_score.correlation + pearson_score.statistic
     
     optimizer = BayesianOptimization(
         f=black_box_function,
@@ -63,12 +71,14 @@ def run(df):
     
     return optimizer.max
 
+objective = "pearson"
 df1 = pd.read_csv('all/wmt-sqm-human-evaluation_score_final_scaled.csv')
 df2 = pd.read_csv('all/wmt-mqm-human-evaluation_score_final_scaled.csv')
 df3 = pd.read_csv('all/wmt-da-human-evaluation_score_final_scaled.csv')
 combined_df = pd.concat([df1, df2, df3], axis=0, ignore_index=True)
 
-res = {"sqm": run(df1), "mqm": run(df2), "da": run(df3), "combined": run(combined_df)}
+# res = {"sqm": run(df1), "mqm": run(df2), "da": run(df3), "combined": run(combined_df)}
+res = {"mqm": run(df2)}
 
-with open("results_with_references_qe.json", "w+") as f:
+with open(f"results_with_references_qe_{objective}.json", "w+") as f:
     json.dump(res, f, indent = 2)
