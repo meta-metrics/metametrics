@@ -70,5 +70,5 @@ for langs in [["en","de"],["en","es"],["ja","zh"]]:
     df = df[(df['lp'].str.contains(src_lang)) | (df['lp'].str.contains(tgt_lang))]
     res = {"mqm": run(df)}
     
-    with open(f"same_{src_lang}-{tgt_lang}_results_with_references.json", "w+") as f:
+    with open(f"same_source_target_{src_lang}-{tgt_lang}_results_with_references.json", "w+") as f:
         json.dump(res, f, indent = 2)
