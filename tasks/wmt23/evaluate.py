@@ -10,7 +10,7 @@ from mt_metrics_eval import meta_info
 from mt_metrics_eval import data
 from mt_metrics_eval import tasks
 
-objective = "pearson"
+objective = "kendall"
 os.system(f"mkdir -p wmt23_outputs/{objective}")
 
 # @title Download data
@@ -80,21 +80,56 @@ evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in wmt23_lps}
 # versions of the metric.
 
 #########################
+#### KENDALL-PEARSON ####
+#########################
+
+# metrics_configs = [
+#     ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
+#     ("comet", {"hf_token": "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", "batch_size": 8}, False),
+#     ("xcomet-xl", {"hf_token": "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", "batch_size": 4}, False)
+# ]
+
+# metric_name = 'metametrics'
+# metric = MetaMetrics(metrics_configs, weights=[1,0.5401215290185519,0.09538033019982725], normalize=True, cache_mode=True)
+
+# metricx-23-xxl-v2p01
+# wmt22-comet-da0.5401215290185519
+# xcomet-xl0.09538033019982725
+
+#########################
 ###### PEARSON ##########
 #########################
 
 ###### METAMETRICS ######
 
-metrics_configs = [
-    ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
-    ("comet", {"hf_token": "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", "batch_size": 8}, False),
-]
+# metrics_configs = [
+#     ("metricx", {"model_name": "google/metricx-23-xxl-v2p0", "batch_size": 1, 'is_qe': False, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, False),
+#     ("comet", {"hf_token": "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", "batch_size": 8}, False),
+# ]
 
-metric_name = 'metametrics'
-metric = MetaMetrics(metrics_configs, weights=[0.7847653360190587,1], normalize=True, cache_mode=True)
+# metric_name = 'metametrics'
+# metric = MetaMetrics(metrics_configs, weights=[0.7847653360190587,1], normalize=True, cache_mode=True)
 
 # metricx-23-xxl-v2p0
 # wmt22-comet-da1
+
+###### METAMETRICS-QE ######
+
+# metrics_configs = [
+#     ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),
+#     ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),        
+#     ("cometkiwi", {"hf_token": "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", "batch_size": 8}, True),
+#     ("cometkiwi-xl", {"hf_token": "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", "batch_size": 1}, True),
+# ]
+
+# metric_name = 'metametrics-qe'
+# metric = MetaMetrics(metrics_configs, weights=[0.06564649056309636,0.9904603321616574,0.1267047358620059,0.05844699223607353], normalize=True, cache_mode=False)
+
+# metricx-23-qe-large-v2p0_reference_free0.06564649056309636
+# metricx-23-qe-xxl-v2p0_reference_free0.9904603321616574
+# wmt22-cometkiwi-da_reference_free0.1267047358620059
+# wmt23-cometkiwi-da-xl_reference_free0.05844699223607353
+
 
 #########################
 ###### KENDALL ##########
@@ -173,15 +208,15 @@ metric = MetaMetrics(metrics_configs, weights=[0.7847653360190587,1], normalize=
 
 ###### METAMETRICS-QE-EN-TARGET ######
 
-# metrics_configs = [
-#     ("gemba_mqm", {"model": "gpt-4o-mini"}, True),
-#     ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),    
-#     ("metricx", {"model_name": "google/metricx-23-qe-xl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, True),
-#     ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),
-# ]
+metrics_configs = [
+    ("gemba_mqm", {"model": "gpt-4o-mini"}, True),
+    ("metricx", {"model_name": "google/metricx-23-qe-large-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-large", 'max_input_length': 1024, "bf16": True}, True),    
+    ("metricx", {"model_name": "google/metricx-23-qe-xl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xl", 'max_input_length': 1024, "bf16": True}, True),
+    ("metricx", {"model_name": "google/metricx-23-qe-xxl-v2p0", "batch_size": 1, 'is_qe': True, 'tokenizer_name': "google/mt5-xxl", 'max_input_length': 1024, "bf16": True}, True),
+]
 
-# metric_name = 'metametrics-qe-en-target'
-# metric = MetaMetrics(metrics_configs, weights=[0.06460795131265709,0.25352367596996267,0.03973703688652602,1], normalize=True)
+metric_name = 'metametrics-qe-en-target'
+metric = MetaMetrics(metrics_configs, weights=[0.06460795131265709,0.25352367596996267,0.03973703688652602,1], normalize=True)
 
 # GEMBA_score0.06460795131265709
 # metricx-23-qe-large-v2p0_reference_free0.25352367596996267
@@ -309,5 +344,5 @@ table = new_results.Table(
 
 print(table)
 
-with open(f"wmt23_outputs/{metric_name}_outputs.txt", "w") as f:
+with open(f"wmt23_outputs/{objective}/{metric_name}_outputs.txt", "w") as f:
     f.write(str(table))
