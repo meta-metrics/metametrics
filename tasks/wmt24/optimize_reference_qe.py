@@ -5,6 +5,8 @@ import json
 
 import pandas as pd
 
+setting = "normal"
+
 def run(df, objective="kendall"):
     metric_scores = {}
     human_scores = df['human_score'].to_list()
@@ -71,14 +73,14 @@ def run(df, objective="kendall"):
     
     return optimizer.max
 
-objective = "pearson"
+objective = "kendall_pearson"
 df1 = pd.read_csv('all/wmt-sqm-human-evaluation_score_final_scaled.csv')
 df2 = pd.read_csv('all/wmt-mqm-human-evaluation_score_final_scaled.csv')
 df3 = pd.read_csv('all/wmt-da-human-evaluation_score_final_scaled.csv')
 combined_df = pd.concat([df1, df2, df3], axis=0, ignore_index=True)
 
 # res = {"sqm": run(df1), "mqm": run(df2), "da": run(df3), "combined": run(combined_df)}
-res = {"mqm": run(df2)}
+res = {"mqm": run(df2, objective=objective)}
 
-with open(f"results_with_references_qe_{objective}.json", "w+") as f:
+with open(f"results/{setting}/results_with_references_qe_{objective}.json", "w+") as f:
     json.dump(res, f, indent = 2)
