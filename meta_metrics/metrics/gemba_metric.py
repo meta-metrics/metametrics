@@ -3,7 +3,6 @@ import json
 from typing import List, Union
 from meta_metrics.metrics.GEMBA.gemba.gpt_api import GptApi
 from meta_metrics.metrics.GEMBA.gemba.gemba_mqm_utils import TEMPLATE_GEMBA_MQM, apply_template, parse_mqm_answer
-
 from meta_metrics.metrics.base_metric import BaseMetric
 
 class GEMBA_MQM(BaseMetric):
@@ -70,6 +69,7 @@ class GEMBA_MQM(BaseMetric):
         df['prompt'] = df.apply(lambda x: apply_template(TEMPLATE_GEMBA_MQM, x), axis=1)
         gptapi = GptApi(self.credentials, verbose=self.verbose)
         gptapi.non_batchable_models += [self.model]
+
         answers = gptapi.bulk_request(df, self.model, lambda x: parse_mqm_answer(x, list_mqm_errors=False, full_desc=True), cache=None, max_tokens=500)
         with open("gemba_output.json", 'w') as f:
             json.dump(answers, f)

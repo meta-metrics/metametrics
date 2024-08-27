@@ -38,6 +38,22 @@ class SetupInstallCommand(install):
             logging.error(result.stderr.decode())
             return
 
+        os.chdir('..')
+
+        # Navigate to the bleurt directory
+        os.chdir('COMET')
+
+        # Install Custom COMET
+        logging.info("Installing COMET ...")
+        result = subprocess.run(["pip", "install", "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logging.info("COMET installed successfully.")
+        else:
+            logging.error("Failed to install COMET.")
+            logging.error(result.stderr.decode())
+            return
+        os.chdir('..')
+
         # reset working directory
         os.chdir(owd)
         
@@ -97,7 +113,7 @@ setup(
         "transformers==4.42.3",
         "sentencepiece",
         "sacrebleu==2.4.2",
-        "unbabel-comet==2.2.2",
+        # "unbabel-comet==2.2.2",
         "pandas",
         "numpy==1.26.4",
         "tf_keras==2.16.0",

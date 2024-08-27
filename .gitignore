@@ -213,10 +213,19 @@ ENV/
 
 # End of https://www.gitignore.io/api/macos,linux,django,python,pycharm
 
+# Output logs
+*.out
+*.json
+*.csv
+
 # Additional folders
 
 BLEURT-20
 *.zip
+bleurt/
+GEMBA/
+embeddings/
+comet_models/
 
 # Environments
 meta_metrics_env
