@@ -12,6 +12,8 @@ from meta_metrics.metrics import MetricXMetric
 from meta_metrics.metrics import YiSiMetric
 from meta_metrics.metrics import GEMBA_MQM
 
+from meta_metrics.metrics import ClipScoreMetric
+
 class MetaMetrics:
     """
         Args:
@@ -52,6 +54,7 @@ class MetaMetrics:
                 "gemba_mqm": (-25.0, 0.0, False, False),
                 "bleu": (0.0, 100.0, False, False),
                 "chrf": (0.0, 100.0, False, False),
+                "clipscore": (0, 100.0, False, False)
             }
             self.EPSILON = 1e-5
 
@@ -80,6 +83,8 @@ class MetaMetrics:
             metric = YiSiMetric(**metric_args)
         elif metric_name =="gemba_mqm":
             metric = GEMBA_MQM(**metric_args)
+        elif metric_name == "clipscore":
+            metric = ClipScoreMetric(**metric_args)
         return metric
 
     def score(self, predictions:List[str], references:List[str], sources: List[str] = None) -> List[float]:
