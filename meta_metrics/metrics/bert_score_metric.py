@@ -30,4 +30,4 @@ class BERTScoreMetric(BaseMetric):
                                           nthreads=self.nthreads)[self.model_metric]
             all_scores = all_scores + scores
         return all_scores
-            
+

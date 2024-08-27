@@ -9,7 +9,6 @@ import torch
 import transformers
 import uuid
 
-
 class MetricXMetric(BaseMetric):
     def __init__(self, is_qe: bool, tokenizer_name: str, model_name: str, batch_size: int,
                  max_input_length: int, bf16: bool, **kwargs):
@@ -20,6 +19,7 @@ class MetricXMetric(BaseMetric):
             self.model = MT5ForRegression.from_pretrained(model_name, torch_dtype=torch.bfloat16)
         else:
             self.model = MT5ForRegression.from_pretrained(model_name)
+
         self.max_input_length = max_input_length
 
         if torch.cuda.is_available():
