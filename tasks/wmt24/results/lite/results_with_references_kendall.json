@@ -1,0 +1,15 @@
+{
+  "mqm": {
+    "target": 0.34858254836275276,
+    "params": {
+      "bertscore_f1": 0.0,
+      "bertscore_precision": 0.0,
+      "bleu": 0.0,
+      "bleurt": 0.0,
+      "chrf": 0.0,
+      "metricx-23-large-v2p0": 1.0,
+      "wmt22-comet-da": 0.7182397187204927,
+      "yisi": 0.0
+    }
+  }
+}

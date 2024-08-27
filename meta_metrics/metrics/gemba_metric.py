@@ -2,10 +2,7 @@ import pandas as pd
 import json
 from typing import List, Union
 from meta_metrics.metrics.GEMBA.gemba.gpt_api import GptApi
-from meta_metrics.metrics.GEMBA.gemba.CREDENTIALS import credentials
 from meta_metrics.metrics.GEMBA.gemba.gemba_mqm_utils import TEMPLATE_GEMBA_MQM, apply_template, parse_mqm_answer
-
-
 from meta_metrics.metrics.base_metric import BaseMetric
 
 class GEMBA_MQM(BaseMetric):
@@ -15,6 +12,12 @@ class GEMBA_MQM(BaseMetric):
             You require an API key from OpenAI to utilize this metric.
             Furthermore, to use other models, you must add entries to CREDENTIALS.py's deployments entry.
         args:
+            credentials (dict): Your credentials should follow the following pattern
+                credentials = {
+                    "deployments": {"text-davinci-002": "text-davinci-002"},
+                    "api_key": "********************************",
+                    "requests_per_second_limit": 1
+                }
             verbose (bool): defaults to False, set to True to test output results.
 
         GEMBA_MQM is a reference-free metric.
@@ -36,9 +39,20 @@ class GEMBA_MQM(BaseMetric):
             hypothesis=hypothesis
         )
     """
-    def __init__(self, model: str, verbose: bool=False):
+    def __init__(self, model: str, credentials: dict, source_lang: str, target_lang: str, verbose: bool=False):
         self.model = model 
         self.verbose = verbose
+        self.source_lang = source_lang
+        self.target_lang = target_lang
+        
+        if "deployments" not in credentials:
+            raise ValueError('"deployments" key not found in credentials')
+        if "api_key" not in credentials:
+            raise ValueError('"api_key" key not found in credentials')
+        if "requests_per_second_limit" not in credentials:
+            raise ValueError('"requests_per_second_limit" key not found in credentials')
+            
+        self.credentials = credentials
 
     def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
         source = [x.strip() for x in sources]
@@ -50,10 +64,12 @@ class GEMBA_MQM(BaseMetric):
             'source_seg': source,
             'target_seg': hypothesis
         })
-        df['source_lang'] = "source_lang"
-        df['target_lang'] = "target_lang"
+        df['source_lang'] = self.source_lang
+        df['target_lang'] = self.target_lang
         df['prompt'] = df.apply(lambda x: apply_template(TEMPLATE_GEMBA_MQM, x), axis=1)
-        gptapi = GptApi(credentials, verbose=self.verbose)
+        gptapi = GptApi(self.credentials, verbose=self.verbose)
+        gptapi.non_batchable_models += [self.model]
+
         answers = gptapi.bulk_request(df, self.model, lambda x: parse_mqm_answer(x, list_mqm_errors=False, full_desc=True), cache=None, max_tokens=500)
         with open("gemba_output.json", 'w') as f:
             json.dump(answers, f)
