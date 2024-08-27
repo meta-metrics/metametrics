@@ -6,16 +6,18 @@ import os
 
 import pandas as pd
 
-setting = "lite"
+setting = "max"
 
 def run(df, random_state=1, objective="kendall", setting="normal"):
     metric_scores = {}
     human_scores = df['human_score'].to_list()
     df = df.drop(columns=['lp', 'domain', 'year', 'id', 'human_score'])
     if setting == "normal":
-        df = df.drop(columns=['GEMBA_score', 'metricx-23-qe-large-v2p0_reference_free', 'metricx-23-qe-xl-v2p0_reference_free', 'metricx-23-qe-xxl-v2p0_reference_free', 'wmt22-cometkiwi-da_reference_free', 'wmt23-cometkiwi-da-xl_reference_free'])
+        df = df.drop(columns=['GEMBA_score', 'metricx-23-qe-large-v2p0_reference_free', 'metricx-23-qe-xl-v2p0_reference_free', 'metricx-23-qe-xxl-v2p0_reference_free', 'wmt22-cometkiwi-da_reference_free', 'wmt23-cometkiwi-da-xl_reference_free','xcomet-xxl'])
     elif setting == "lite":
-        df = df.drop(columns=['metricx-23-xl-v2p0','metricx-23-xxl-v2p0', 'xcomet-xl', 'GEMBA_score', 'metricx-23-qe-large-v2p0_reference_free', 'metricx-23-qe-xl-v2p0_reference_free', 'metricx-23-qe-xxl-v2p0_reference_free', 'wmt22-cometkiwi-da_reference_free', 'wmt23-cometkiwi-da-xl_reference_free'])
+        df = df.drop(columns=['metricx-23-xl-v2p0','metricx-23-xxl-v2p0', 'xcomet-xl', 'GEMBA_score', 'metricx-23-qe-large-v2p0_reference_free', 'metricx-23-qe-xl-v2p0_reference_free', 'metricx-23-qe-xxl-v2p0_reference_free', 'wmt22-cometkiwi-da_reference_free', 'wmt23-cometkiwi-da-xl_reference_free','xcomet-xxl'])
+    elif setting == "max":
+        df = df.drop(columns=['GEMBA_score', 'metricx-23-qe-large-v2p0_reference_free', 'metricx-23-qe-xl-v2p0_reference_free', 'metricx-23-qe-xxl-v2p0_reference_free', 'wmt22-cometkiwi-da_reference_free', 'wmt23-cometkiwi-da-xl_reference_free'])
     else:
         return 0
     
@@ -71,11 +73,17 @@ def run(df, random_state=1, objective="kendall", setting="normal"):
         pbounds=pbounds,
         random_state=random_state,
     )
-    
-    optimizer.maximize(
-        init_points=5,
-        n_iter=50,
-    )
+
+    if setting == "lite":
+        optimizer.maximize(
+            init_points=5,
+            n_iter=50,
+        )
+    else:
+        optimizer.maximize(
+            init_points=5,
+            n_iter=100,
+        )
     
     return optimizer.max
 

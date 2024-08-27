@@ -11,7 +11,7 @@ def run(df, objective="kendall"):
     metric_scores = {}
     human_scores = df['human_score'].to_list()
     df = df.drop(columns=['lp', 'domain', 'year', 'id', 'human_score'])
-    df = df[['GEMBA_score', 'metricx-23-qe-large-v2p0_reference_free', 'metricx-23-qe-xl-v2p0_reference_free', 'metricx-23-qe-xxl-v2p0_reference_free', 'wmt22-cometkiwi-da_reference_free', 'wmt23-cometkiwi-da-xl_reference_free']]
+    df = df[['GEMBA_score', 'metricx-23-qe-large-v2p0_reference_free', 'metricx-23-qe-xl-v2p0_reference_free', 'metricx-23-qe-xxl-v2p0_reference_free', 'wmt22-cometkiwi-da_reference_free', 'wmt23-cometkiwi-da-xl_reference_free', 'xcomet-xxl']]
     
     metrics_names = list(df.columns)
     for metric_name in metrics_names:
