@@ -87,7 +87,7 @@ class ClipScoreMetric(VisionToTextBaseMetric):
     """
 
     """
-    def __init__(self, is_reference_only:bool, model_name: str, device: str, w: float=2.5, **kwargs):
+    def __init__(self, is_reference_only: bool, model_name: str, device: str, w: float=2.5, **kwargs):
         # self.clip_score_fn = partial(clip_score, model_name_or_path=model_name)
         self.is_reference_only = is_reference_only
         self.model_name = model_name
