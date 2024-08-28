@@ -1,20 +1,17 @@
-import torch
-import clip
 from typing import List, Union
 from tqdm import tqdm
-
 from PIL import Image
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
+from packaging import version
+from meta_metrics.metrics.base_metric import VisionToTextBaseMetric
+
 import torch
+import clip
 import tqdm
 import numpy as np
 import sklearn.preprocessing
 import collections
 import warnings
-
-from packaging import version
-
-from meta_metrics.metrics.base_metric import VisionToTextBaseMetric
 
 class CLIPCapDataset(torch.utils.data.Dataset):
     def __init__(self, data, prefix='A photo depicts'):
@@ -97,7 +94,6 @@ class ClipScoreMetric(VisionToTextBaseMetric):
 
         self.device = device
         self.w = w
-
 
     def score(self, image_sources: List[str], text_predictions: List[str], text_references: Union[None, List[str]]=None, text_sources: Union[None, List[str]]=None) -> List[float]:
         if self.is_reference_only:
