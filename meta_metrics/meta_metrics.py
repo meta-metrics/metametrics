@@ -5,10 +5,18 @@ import numpy as np
 import json
 import os
 
+from meta_metrics.metrics import BLEUMetric
+from meta_metrics.metrics import BARTScoreMetric
 from meta_metrics.metrics import BERTScoreMetric
 from meta_metrics.metrics import BLEURT20Metric
+from meta_metrics.metrics import chrFMetric
 from meta_metrics.metrics import COMETMetric
+from meta_metrics.metrics import DataStatsMetric
 from meta_metrics.metrics import MetricXMetric
+from meta_metrics.metrics import METEORMetric
+from meta_metrics.metrics import ROUGEMetric
+from meta_metrics.metrics import ROUGEWEMetric
+from meta_metrics.metrics import SummaQAMetric
 from meta_metrics.metrics import YiSiMetric
 from meta_metrics.metrics import GEMBA_MQM
 
@@ -50,18 +58,30 @@ class MetaMetrics:
                 "cometkiwi-xl": (0.0, 1.0, False, True),
                 "cometkiwi-xxl": (0.0, 1.0, False, True),
                 "gemba_mqm": (-25.0, 0.0, False, False),
-                "bleu": (0.0, 100.0, False, False),
+                "bleu": (0.0, 1.0, False, False),
                 "chrf": (0.0, 100.0, False, False),
+                "meteor": (0.0, 1.0, False, False),
+                "rouge": (0.0, 1.0, False, False),
+                "rougewe": (0.0, 1.0, False, False),
+                "summaqa": (0.0, 1.0, False, False),
+                "bartscore": (0.0, 1.0, False, False),
+                # "datastats": (0.0, 1.0, False, False), # TODO not sure, hence commented out
             }
             self.EPSILON = 1e-5
 
     def get_metric(self, metric_name, metric_args):
         print(f"get metric: {metric_name}")
         metric = None
-        if metric_name == "bertscore":
+        if metric_name == "bleu":
+            metric = BLEUMetric(**metric_args)
+        elif metric_name == "bartscore":
+            metric = BARTScoreMetric(**metric_args)
+        elif metric_name == "bertscore":
             metric = BERTScoreMetric(**metric_args)
         elif metric_name == "bleurt":
-            metric = BLEURT20Metric()
+            metric = BLEURT20Metric(**metric_args)
+        elif metric_name == "chrf":
+            metric = chrFMetric(**metric_args)
         elif metric_name == "comet":
             metric = COMETMetric(comet_model="Unbabel/wmt22-comet-da", **metric_args)
         elif metric_name == "xcomet-xxl":
@@ -74,8 +94,18 @@ class MetaMetrics:
             metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xl", **metric_args)
         elif metric_name == "cometkiwi-xxl":
             metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xxl", **metric_args)
+        elif metric_name == "datastats":
+            metric = DataStatsMetric(**metric_args)
         elif metric_name == "metricx":
             metric = MetricXMetric(**metric_args)
+        elif metric_name == "meteor":
+            metric = METEORMetric(**metric_args)
+        elif metric_name == "rouge":
+            metric = ROUGEMetric(**metric_args)
+        elif metric_name == "rougewe":
+            metric = ROUGEWEMetric(**metric_args)
+        elif metric_name == "summaqa":
+            metric = SummaQAMetric(**metric_args)
         elif metric_name == "yisi":
             metric = YiSiMetric(**metric_args)
         elif metric_name =="gemba_mqm":
