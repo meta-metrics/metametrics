@@ -32,14 +32,6 @@ class SetupInstallCommand(install):
             d = bz2.decompress(r.content)
             with open(os.path.join(os.getcwd(), "embeddings/deps.words"), "wb") as outputf:
                 outputf.write(d)
-
-        # Clone BARTScore; No we do not do pip install here as the environment is different
-        os.system("git clone https://github.com/neulab/BARTScore.git")
-        
-        # Clone BLEURT repository if it doesn't exist
-        if not os.path.isdir('bleurt'):
-            logging.info("Cloning BLEURT repository ...")
-            subprocess.run(["git", "clone", "https://github.com/google-research/bleurt.git"])
             
         # Navigate to the bleurt directory
         os.chdir('bleurt')
