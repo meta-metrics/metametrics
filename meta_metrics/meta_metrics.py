@@ -118,7 +118,7 @@ class MetaMetrics:
             metric = ClipScoreMetric(**metric_args)
         return metric
 
-    def score(self, image_sources:List[torch.Tensor], text_predictions:List[str], text_references:List[str], text_sources: List[str] = None) -> List[float]:
+    def score_vl(self, image_sources:List[torch.Tensor], text_predictions:List[str], text_references:List[str], text_sources: List[str] = None) -> List[float]:
         overall_metric_score = None
         for i in range(len(self.metrics_configs)):
             metric_config = self.metrics_configs[i]

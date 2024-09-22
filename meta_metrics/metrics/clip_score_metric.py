@@ -138,7 +138,6 @@ class ClipScoreMetric(VisionToTextBaseMetric):
             if isinstance(image_sources, list):
                 # need to extract image features
                 images = extract_all_images(image_sources, self.model, self.device)
-
                 text_predictions = extract_all_captions(text_predictions, self.model, self.device)
 
                 #as of numpy 1.21, normalize doesn't work properly for float16
@@ -150,9 +149,9 @@ class ClipScoreMetric(VisionToTextBaseMetric):
                         'due to a numerical instability, new numpy normalization is slightly different than paper results. '
                         'to exactly replicate paper results, please use numpy version less than 1.21, e.g., 1.20.3.')
                     images = images / np.sqrt(np.sum(images**2, axis=1, keepdims=True))
-                    candidates = candidates / np.sqrt(np.sum(candidates**2, axis=1, keepdims=True))
+                    text_predictions = text_predictions / np.sqrt(np.sum(text_predictions**2, axis=1, keepdims=True))
 
-                per = self.w*np.clip(np.sum(images * candidates, axis=1), 0, None)
+                per = self.w*np.clip(np.sum(images * text_predictions, axis=1), 0, None)
                 return per
 
 
