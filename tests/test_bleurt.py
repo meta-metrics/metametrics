@@ -1,16 +1,16 @@
 import unittest
+import numpy as np
 
 from .test_util import *
 
 from meta_metrics.metrics.bleurt20_metric import BLEURT20Metric
 
-class TestBaseMetric(unittest.TestCase):
+class TestBLEURT20Metric(unittest.TestCase):
     def test_score(self):
         metric = BLEURT20Metric()
-        result = metric.score(PREDICTIONS, REFERENCES)
+        result = metric.score(MT_PREDICTIONS, MT_REFERENCES)
         expected = [0.8208704590797424, 0.7630288004875183, 0.5910331010818481]
-        
-        self.assertAlmostEqual(result, expected, delta=0.0005)
+        np.testing.assert_almost_equal(np.array(result), np.array(expected), 5)
 
 if __name__ == '__main__':
     unittest.main()

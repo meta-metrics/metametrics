@@ -229,3 +229,5 @@ comet_models/
 
 # Environments
 meta_metrics_env
+ROUGE-1.5.5
+meteor-1.5.jar

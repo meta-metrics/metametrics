@@ -73,7 +73,7 @@ class YiSiMetric:
     def tokenize(self, texts: List[str]):
         return self.tokenizer(texts, padding=True, truncation=True, return_tensors='pt', max_length=self.max_input_length).to(self.device)
 
-    def score(self, predictions: List[str], references: Union[None, List[str]]=None, sources: Union[None, List[str]]=None) -> List[float]:
+    def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
         idf_weights = self._compute_idf(predictions + references)
         self.model.idf_weights = idf_weights
 

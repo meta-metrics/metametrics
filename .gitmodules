@@ -1,3 +1,6 @@
 [submodule "meta_metrics/metrics/GEMBA"]
 	path = meta_metrics/metrics/GEMBA
 	url = https://github.com/MicrosoftTranslator/GEMBA.git
+[submodule "meta_metrics/metrics/BARTScore"]
+	path = meta_metrics/metrics/BARTScore
+	url = https://github.com/neulab/BARTScore.git
