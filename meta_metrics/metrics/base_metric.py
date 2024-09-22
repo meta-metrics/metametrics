@@ -2,7 +2,7 @@ from typing import List, Union
 import torch
 
 class BaseMetric:
-    def score(self, predictions: List[str], references: Union[None, List[str]]=None, sources: Union[None, List[str]]=None) -> List[float]:
+    def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
         raise NotImplementedError()
     
 class VisionToTextBaseMetric:
