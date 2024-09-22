@@ -22,7 +22,7 @@ if __name__ == "__main__":
         if "Flickr8k" in dataset_name:
             captions = {}
 
-            with open(cur_dir + "../data/Flickr8k/Flickr8k_text/Flickr8k.token.txt") as f_open:
+            with open(cur_dir + "/../data/Flickr8k/Flickr8k_text/Flickr8k.token.txt") as f_open:
                 for line in f_open:
                     arr = line.split("\t")
                     image_id, image_caption = arr
@@ -35,12 +35,12 @@ if __name__ == "__main__":
             references = []
             predictions = []
 
-            with open(cur_dir + "../data/Flickr8k/Flickr8k_text/ExpertAnnotations.txt") as f_open:
+            with open(cur_dir + "/../data/Flickr8k/Flickr8k_text/Flickr8k.token.txt") as f_open:
                 for line in f_open:
                     arr = line.split("\t")
                     caption_map[arr[0]] = arr[1]
 
-            with open(cur_dir + "../data/Flickr8k/Flickr8k_text/ExpertAnnotations.txt") as f_open:
+            with open(cur_dir + "/../data/Flickr8k/Flickr8k_text/ExpertAnnotations.txt") as f_open:
                 for line in f_open:
                     arr = line.split("\t")
                     image = arr[0]
@@ -48,21 +48,22 @@ if __name__ == "__main__":
                     annotation = arr[2:]
                     avg = np.mean([int(attn) for attn in annotation])
 
-                    images_sources.append(image)
+                    images_sources.append(f"{cur_dir}/../data/Flickr8k/Flickr8k_dataset/{image}")
                     caption_ids.append(caption_id)
                     predictions.append(caption_map[caption_id])
-                    annotations.append(annotation)
+                    annotations.append(avg)
 
             new_df = pd.DataFrame()
             new_df["mt"] = predictions
             new_df["src"] = images_sources
 
-            all_metric_scores = []
+            all_metric_scores = {}
             for metric_id in range(len(metrics_configs)):
                 metric_name = metrics_configs[metric_id][0]                
                 metric = MetaMetrics([metrics_configs[metric_id]], weights=[1])
 
-                all_metric_scores[metric] = np.array(metric.score(images_sources, predictions, references, None))
+                all_metric_scores[metric] = np.array(metric.score_vl(images_sources, predictions, references, None))
                 new_df[metric_name] = all_metric_scores[metric]
-            
+
+            os.system(f"mkdir -p {cur_dir}/output_wmt24")
             new_df.to_csv(os.path.join(cur_dir, f"output_wmt24/{dataset_name}_with_{all_metric_names}.csv"), index=False)

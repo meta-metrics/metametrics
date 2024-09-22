@@ -127,6 +127,7 @@ setup(
         "gdown",
         "huggingface-hub",
         "scikit-learn",
+        "openai-clip",
         # GEMBA Requirements
         "openai>=1.0.0",
         "termcolor",
