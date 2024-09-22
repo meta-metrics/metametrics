@@ -2,6 +2,7 @@ from bayes_opt import BayesianOptimization
 from scipy import stats
 from typing import List, Tuple
 import numpy as np
+import torch
 import json
 import os
 
@@ -19,6 +20,8 @@ from meta_metrics.metrics import ROUGEWEMetric
 from meta_metrics.metrics import SummaQAMetric
 from meta_metrics.metrics import YiSiMetric
 from meta_metrics.metrics import GEMBA_MQM
+
+from meta_metrics.metrics import ClipScoreMetric
 
 class MetaMetrics:
     """
@@ -60,6 +63,7 @@ class MetaMetrics:
                 "gemba_mqm": (-25.0, 0.0, False, False),
                 "bleu": (0.0, 1.0, False, False),
                 "chrf": (0.0, 100.0, False, False),
+                "clipscore": (0, 100.0, False, False)
                 "meteor": (0.0, 1.0, False, False),
                 "rouge": (0.0, 1.0, False, False),
                 "rougewe": (0.0, 1.0, False, False),
@@ -110,7 +114,45 @@ class MetaMetrics:
             metric = YiSiMetric(**metric_args)
         elif metric_name =="gemba_mqm":
             metric = GEMBA_MQM(**metric_args)
+        elif metric_name == "clipscore":
+            metric = ClipScoreMetric(**metric_args)
         return metric
+
+    def score(self, image_sources:List[torch.Tensor], text_predictions:List[str], text_references:List[str], text_sources: List[str] = None) -> List[float]:
+        overall_metric_score = None
+        for i in range(len(self.metrics_configs)):
+            metric_config = self.metrics_configs[i]
+            metric_name = metric_config[0]
+            metric_args = metric_config[1]
+
+            if self.cache_mode:
+                print(f"[cache mode] get metric: {metric_name}")
+                metric = self.metrics[i]
+            else:
+                print(f"initialize metric: {metric_name}")
+                metric = self.get_metric(metric_name, metric_args)
+                
+            metric_score = np.array(metric.score(image_sources, text_predictions, text_references, text_sources))
+
+            if self.normalize:
+                _min, _max, _invert, _clip = self.normalization_config[metric_name]
+                if _clip:
+                    metric_score = np.clip(metric_score, _min, _max)
+                
+                if (_min - self.EPSILON <= metric_score).any() and (metric_score <= _max + self.EPSILON).any():
+                    metric_score = np.clip(metric_score, _min, _max)
+                
+                metric_score = (metric_score - _min) / (_max - _min)
+                if _invert:
+                    metric_score = 1 - metric_score
+
+            del metric # for efficiency
+
+            if i == 0:
+                overall_metric_score = metric_score * self.weights[i]
+            else:
+                overall_metric_score += metric_score * self.weights[i]
+        return overall_metric_score
 
     def score(self, predictions:List[str], references:List[str], sources: List[str] = None) -> List[float]:
         overall_metric_score = None
@@ -125,6 +167,7 @@ class MetaMetrics:
             else:
                 print(f"initialize metric: {metric_name}")
                 metric = self.get_metric(metric_name, metric_args)
+                
             metric_score = np.array(metric.score(predictions, references, sources))
 
             if self.normalize:
