@@ -53,7 +53,7 @@ jobs:
     environment:
       name: pypi
       # OPTIONAL: uncomment and update to include your PyPI project URL in the deployment status:
-      # url: https://pypi.org/p/metametrics
+      url: https://pypi.org/p/metametrics/
 
     steps:
       - name: Retrieve release distributions
