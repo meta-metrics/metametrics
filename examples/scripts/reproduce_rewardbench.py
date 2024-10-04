@@ -15,38 +15,38 @@ CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 INDEXING_CSV_PATH = os.path.join(CUR_DIR, "saved_results", "rb_indexing.csv")
 DEFAULT_DATASET = 'allenai/reward-bench'
 
-SAVED_WEIGHTS = {'GRM-Gemma-2B-rewardmodel-ft': 0.1144232211410179,
-            'GRM-Llama3-8B-rewardmodel-ft': 0.21877515451343996,
-            'Skywork-Reward-Llama-3.1-8B': 1.0,
-            'internlm2-1_8b-reward': 0.22148920242377254,
-            'internlm2-7b-reward': 0.5482172828914557}
+SAVED_WEIGHTS = {'GRM-Gemma-2B-rewardmodel-ft_all': 0.1144232211410179,
+            'GRM-Llama3-8B-rewardmodel-ft_all': 0.21877515451343996,
+            'Skywork-Reward-Llama-3.1-8B_all': 1.0,
+            'internlm2-1_8b-reward_all': 0.22148920242377254,
+            'internlm2-7b-reward_all': 0.5482172828914557}
 
 EXAMPLE_MODEL_DICT = {
-    'GRM-Gemma-2B-rewardmodel-ft': {
+    'GRM-Gemma-2B-rewardmodel-ft_all': {
         'model_name': 'Ray2333/GRM-Gemma-2B-rewardmodel-ft',
         'output_dir': 'outputs_reward-bench/Ray2333/GRM-Gemma-2B-rewardmodel-ft',
         'json_path': 'outputs_reward-bench/Ray2333/GRM-Gemma-2B-rewardmodel-ftRay2333/GRM-Gemma-2B-rewardmodel-ft_all.jsonl',
         'batch_size': 2
     },
-    'GRM-Llama3-8B-rewardmodel-ft': {
+    'GRM-Llama3-8B-rewardmodel-ft_all': {
         'model_name':  'Ray2333/GRM-Llama3-8B-rewardmodel-ft',
         'output_dir': 'outputs_reward-bench/Ray2333/GRM-Llama3-8B-rewardmodel-ft',
         'json_path': 'outputs_reward-bench/Ray2333/GRM-Llama3-8B-rewardmodel-ftRay2333/GRM-Llama3-8B-rewardmodel-ft_all.jsonl',
         'batch_size': 2
     },
-    'Skywork-Reward-Llama-3.1-8B': {
+    'Skywork-Reward-Llama-3.1-8B_all': {
         'model_name': 'Skywork/Skywork-Reward-Llama-3.1-8B',
         'output_dir': 'outputs_reward-bench/Skywork/Skywork-Reward-Llama-3.1-8B',
         'json_path': 'outputs_reward-bench/Skywork/Skywork-Reward-Llama-3.1-8BSkywork/Skywork-Reward-Llama-3.1-8B_all.jsonl',
         'batch_size': 2
     },
-    'internlm2-1_8b-reward': {
+    'internlm2-1_8b-reward_all': {
         'model_name': 'internlm/internlm2-1_8b-reward',
         'output_dir': 'outputs_reward-bench/internlm/internlm2-1_8b-reward',
         'json_path': 'outputs_reward-bench/internlm/internlm2-1_8b-rewardinternlm/internlm2-1_8b-reward_all.jsonl',
         'batch_size': 2
     },
-    'internlm2-7b-reward': {
+    'internlm2-7b-reward_all': {
         'model_name': 'internlm/internlm2-7b-reward',
         'output_dir': 'outputs_reward-bench/internlm/internlm2-7b-reward',
         'json_path': 'outputs_reward-bench/internlm/internlm2-7b-rewardinternlm/internlm2-7b-reward_all.jsonl',
@@ -220,7 +220,7 @@ def ranking_acc(y_test, y_pred):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-q', '--quick', type=bool, required=False, default=True, help="Quick reproduce, using saved result")
+    parser.add_argument('--quick', default=True, action=argparse.BooleanOptionalAction, help="Quick reproduce, using saved result")
     args = parser.parse_args()
     
     # Run all models
