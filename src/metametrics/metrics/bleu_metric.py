@@ -1,5 +1,6 @@
 from typing import List, Union
 import sacrebleu
+import numpy as np
 
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
@@ -22,3 +23,6 @@ class BLEUMetric(BaseMetric):
                                             use_effective_order=self.use_effective_order).score
             segment_scores.append(score)
         return segment_scores
+    
+    def normalize(cls, scores: List[float]) -> np.ndarray:
+        return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)

@@ -1,13 +1,14 @@
 import pandas as pd
 import json
 from typing import List, Union
+import numpy as np
 
 from metametrics.metrics.GEMBA.gemba.gpt_api import GptApi
 from metametrics.metrics.GEMBA.gemba.gemba_mqm_utils import TEMPLATE_GEMBA_MQM, apply_template, parse_mqm_answer
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
-class GEMBA_MQM(BaseMetric):
+class GEMBA_MQM_Metric(BaseMetric):
     """
         IMPORTANT!
             Before using GEMBA_MQM, go to the GEMBA/gemba submodule and edit the CREDENTIALS.py.
@@ -78,3 +79,5 @@ class GEMBA_MQM(BaseMetric):
         answers_list = [x['answer'] for x in answers]
         return answers_list
     
+    def normalize(cls, scores: List[float]) -> np.ndarray:
+        return super().normalize(scores, min_val=-25.0, max_val=0.0, invert=False, clip=False)

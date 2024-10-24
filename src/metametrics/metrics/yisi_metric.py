@@ -107,3 +107,6 @@ class YiSiMetric(BaseMetric):
                 scores.append(score)
 
         return scores
+    
+    def normalize(cls, scores: List[float]) -> np.ndarray:
+        return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=True)

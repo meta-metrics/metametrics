@@ -178,3 +178,7 @@ class ROUGEWEMetric(BaseMetric):
             segment_scores.append(self.calculate_model_metric(matches, recall_total, precision_total))
 
         return segment_scores
+    
+    def normalize(cls, scores: List[float]) -> np.ndarray:
+        return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)
+    

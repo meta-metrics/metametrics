@@ -5,6 +5,7 @@ import logging
 
 from comet import load_from_checkpoint
 from huggingface_hub import snapshot_download
+import numpy as np
 
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
@@ -48,3 +49,6 @@ class COMETMetric(BaseMetric):
         else:
             data = [{"src": src, "mt": mt, "ref": ref} for src, mt, ref in zip(sources, predictions, references)]
         return self.model.predict(data, batch_size=self.batch_size, gpus=self.gpus).scores
+
+    def normalize(cls, scores: List[float]) -> np.ndarray:
+        return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)

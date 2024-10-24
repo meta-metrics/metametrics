@@ -6,6 +6,7 @@ import copy
 import dataclasses
 import warnings
 
+import numpy as np
 import datasets
 import torch
 from torch import nn
@@ -331,3 +332,6 @@ class MetricXMetric(BaseMetric):
  
         predictions, _, _ = self.trainer.predict(test_dataset=ds["test"])
         return predictions
+    
+    def normalize(cls, scores: List[float]) -> np.ndarray:
+        return super().normalize(scores, min_val=0.0, max_val=25.0, invert=True, clip=True)

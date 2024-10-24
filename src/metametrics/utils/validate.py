@@ -19,12 +19,12 @@ def validate_argument_list(arg: Any, valid_arguments: List[Any]) -> Any:
     else:
         raise ValueError(f"Invalid argument '{arg}'. Valid options are: {valid_arguments}")
     
-def validate_real(arg: Any, valid_min: float = None, valid_max: float = None) -> float:
+def validate_real(arg: float, valid_min: float = None, valid_max: float = None) -> float:
     """
     Validate that the given floating-point argument is within the specified range.
 
     Args:
-        arg (Any): The argument to be validated.
+        arg (float): The floating-point argument to validate.
         valid_min (float, optional): The minimum valid value (inclusive). Defaults to None.
         valid_max (float, optional): The maximum valid value (inclusive). Defaults to None.
 
@@ -34,8 +34,6 @@ def validate_real(arg: Any, valid_min: float = None, valid_max: float = None) ->
     Raises:
         ValueError: If the argument is not within the specified range.
     """
-    if not isinstance(arg, float) and not isinstance(arg, int):
-        raise ValueError(f"Invalid argument '{arg}'. Must be a real value.")
     if valid_min is not None and arg < valid_min:
         raise ValueError(f"Invalid argument '{arg}'. Must be greater than or equal to {valid_min}.")
     if valid_max is not None and arg > valid_max:
@@ -43,12 +41,12 @@ def validate_real(arg: Any, valid_min: float = None, valid_max: float = None) ->
     
     return arg
 
-def validate_int(arg: Any, valid_min: int = None, valid_max: int = None) -> int:
+def validate_int(arg: int, valid_min: int = None, valid_max: int = None) -> int:
     """
     Validate that the given integer argument is within the specified range.
 
     Args:
-        arg (Any): The argument to be validated.
+        arg (int): The integer argument to validate.
         valid_min (int, optional): The minimum valid value (inclusive). Defaults to None.
         valid_max (int, optional): The maximum valid value (inclusive). Defaults to None.
 
@@ -58,8 +56,6 @@ def validate_int(arg: Any, valid_min: int = None, valid_max: int = None) -> int:
     Raises:
         ValueError: If the argument is not within the specified range.
     """
-    if not isinstance(arg, int):
-        raise ValueError(f"Invalid argument '{arg}'. Must be a int value.")
     if valid_min is not None and arg < valid_min:
         raise ValueError(f"Invalid argument '{arg}'. Must be greater than or equal to {valid_min}.")
     if valid_max is not None and arg > valid_max:
@@ -72,7 +68,7 @@ def validate_bool(arg: Any) -> bool:
     Validate that the given argument is a boolean value.
 
     Args:
-        arg (Any): The argument to be validated.
+        arg (Any): The argument to validate.
 
     Returns:
         bool: The validated boolean argument.

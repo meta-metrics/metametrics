@@ -3,6 +3,7 @@ import logging
 import tempfile
 import os
 import shutil
+import numpy as np
 from pyrouge import Rouge155
 
 from metametrics.metrics.base_metric import BaseMetric
@@ -37,4 +38,7 @@ class ROUGEMetric(BaseMetric):
             segment_scores.append(output_dict[self.rouge_type])
 
         return segment_scores
+    
+    def normalize(cls, scores: List[float]) -> np.ndarray:
+        return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)
         

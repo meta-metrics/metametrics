@@ -1,5 +1,6 @@
 from evaluate import load
 from typing import List, Union
+import numpy as np
 
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
@@ -25,3 +26,6 @@ class BERTScoreMetric(BaseMetric):
                                           nthreads=self.nthreads, num_layers=self.num_layers,
                                           lang="en", rescale_with_baseline=self.rescale_with_baseline)[self.model_metric]
         return all_scores
+    
+    def normalize(cls, scores: List[float]) -> np.ndarray:
+        return super().normalize(scores, min_val=-1.0, max_val=1.0, invert=False, clip=False)

@@ -1,5 +1,6 @@
 from evaluate import load
 from typing import List, Union
+import numpy as np
 
 from metametrics.metrics.BARTScore.bart_score import BARTScorer
 from metametrics.metrics.base_metric import BaseMetric
@@ -26,3 +27,6 @@ class BARTScoreMetric(BaseMetric):
         self._initialize_metric()
         all_scores = self.bart_scorer.multi_ref_score(predictions, references, agg=self.agg_method, batch_size=self.batch_size)
         return all_scores
+    
+    def normalize(cls, scores: List[float]) -> np.ndarray:
+        return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)

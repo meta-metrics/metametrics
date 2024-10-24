@@ -154,4 +154,5 @@ class ClipScoreMetric(VisionToTextBaseMetric):
                 per = self.w*np.clip(np.sum(images * text_predictions, axis=1), 0, None)
                 return per
 
-
+    def normalize(cls, scores: List[float]) -> np.ndarray:
+        return super().normalize(scores, min_val=0.0, max_val=100.0, invert=False, clip=False)
