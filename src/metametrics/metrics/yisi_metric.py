@@ -6,6 +6,9 @@ import numpy as np
 from typing import List, Dict, Union
 from tqdm import tqdm
 
+from metametrics.metrics.base_metric import BaseMetric
+from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
+
 class YiSiModel(nn.Module):
     def __init__(self, model_name='bert-base-multilingual-cased', idf_weights: Dict[int, float] = None):
         super(YiSiModel, self).__init__()
@@ -49,16 +52,13 @@ class YiSiModel(nn.Module):
 
         return weighted_pool_pred, weighted_pool_ref
 
-class YiSiMetric:
-    def __init__(self, model_name: str = 'bert-base-multilingual-cased', alpha: float = 0.8, batch_size=64, max_input_length=512, device='cuda'):
+class YiSiMetric(BaseMetric):
+    def __init__(self, model_name: str='bert-base-multilingual-cased', alpha: float=0.8, batch_size=64, max_input_length=512, device='cuda'):
         self.model_name = model_name
-        self.alpha = alpha
-        self.batch_size = batch_size
-        self.max_input_length = max_input_length
+        self.alpha = validate_real(alpha, valid_min=0, valid_max=1)
+        self.batch_size = validate_int(batch_size, valid_min=1)
+        self.max_input_length = validate_int(max_input_length, valid_min=1)
         self.device = torch.device(device if torch.cuda.is_available() else 'cpu')
-
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = YiSiModel(model_name=model_name).to(self.device)
 
     def _compute_idf(self, documents: List[str]) -> Dict[str, float]:
         tf = TfidfVectorizer(
@@ -70,10 +70,16 @@ class YiSiMetric:
 
         return {self.tokenizer.convert_tokens_to_ids([tok])[0]: tf.idf_[tf.vocabulary_[tok]] for tok in tf.vocabulary_.keys()}
 
-    def tokenize(self, texts: List[str]):
+    def _tokenize(self, texts: List[str]):
         return self.tokenizer(texts, padding=True, truncation=True, return_tensors='pt', max_length=self.max_input_length).to(self.device)
 
+    def _initialize_metric(self):
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.model = YiSiModel(model_name=self.model_name).to(self.device)
+
     def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
+        self._initialize_metric()
+        
         idf_weights = self._compute_idf(predictions + references)
         self.model.idf_weights = idf_weights
 
@@ -84,8 +90,8 @@ class YiSiMetric:
             batch_predictions = predictions[start_idx:end_idx]
             batch_references = references[start_idx:end_idx]
 
-            pred_inputs = self.tokenize(batch_predictions)
-            ref_inputs = self.tokenize(batch_references)
+            pred_inputs = self._tokenize(batch_predictions)
+            ref_inputs = self._tokenize(batch_references)
 
             weighted_pool_pred, weighted_pool_ref = self.model(
                 pred_input_ids=pred_inputs['input_ids'],

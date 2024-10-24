@@ -15,7 +15,6 @@ from metametrics.metrics import BERTScoreMetric
 from metametrics.metrics import BLEURT20Metric
 from metametrics.metrics import chrFMetric
 from metametrics.metrics import COMETMetric
-from metametrics.metrics import DataStatsMetric
 from metametrics.metrics import MetricXMetric
 from metametrics.metrics import METEORMetric
 from metametrics.metrics import ROUGEMetric
@@ -102,8 +101,6 @@ class MetaMetrics:
             metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xl", **metric_args)
         elif metric_name == "cometkiwi-xxl":
             metric = COMETMetric(comet_model="Unbabel/wmt23-cometkiwi-da-xxl", **metric_args)
-        elif metric_name == "datastats":
-            metric = DataStatsMetric(**metric_args)
         elif metric_name == "metricx":
             metric = MetricXMetric(**metric_args)
         elif metric_name == "meteor":

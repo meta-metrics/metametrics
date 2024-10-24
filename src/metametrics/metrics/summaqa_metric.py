@@ -1,16 +1,17 @@
 ########################## CODE ADAPTED FROM Summa-QA REPOSITORY (https://github.com/ThomasScialom/summa-qa) ########################## 
 
+from typing import List, Union
+from collections import Counter
+import string
+import re
+import subprocess
+
 import torch
 from transformers import BertTokenizer, BertForQuestionAnswering
 import spacy
 
-from typing import List, Union
-from collections import Counter
-import string
-import subprocess
-import re
-
-from .base_metric import BaseMetric
+from metametrics.metrics.base_metric import BaseMetric
+from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 class QA_Bert():
     def __init__(self):
@@ -43,14 +44,10 @@ class QA_Bert():
         return asws, probs
         
 class SummaQAMetric(BaseMetric):
-    def __init__(self, model_metric="f1", batch_size=8, max_seq_len=384, use_gpu=True, **kwargs):
-        self.nlp_web_sm = spacy.load("en_core_web_sm")
-        self.nlp_web_md = spacy.load("en_core_web_md")
-        self.model = QA_Bert()
-        self.batch_size = batch_size
-        self.max_seq_len = max_seq_len
-        self.gpu = use_gpu
-        self.model_metric = "f1" if model_metric not in ["prob", "f1"] else model_metric
+    def __init__(self, model_metric="f1", batch_size=8, max_seq_len=384, **kwargs):
+        self.batch_size = validate_int(batch_size, valid_min=1)
+        self.max_seq_len = validate_int(max_seq_len, valid_min=1)
+        self.model_metric = validate_argument_list(model_metric, ["prob", "f1"])
     
     def normalize_answer(self, s):
         """Lower text and remove punctuation, articles and extra whitespace."""
@@ -155,6 +152,14 @@ class SummaQAMetric(BaseMetric):
 
         return {"avg_prob": score_prob/len(questions), "avg_fscore": score_f/len(questions)}
     
+    def _initialize_metric(self):
+        # Download spacy models
+        subprocess.run("python3 -m spacy download en_core_web_sm", shell=True, check=True, text=True, capture_output=True)
+        subprocess.run("python3 -m spacy download en_core_web_md", shell=True, check=True, text=True, capture_output=True)
+
+        self.nlp_web_sm = spacy.load("en_core_web_sm")
+        self.nlp_web_md = spacy.load("en_core_web_md")
+        self.model = QA_Bert()
     
     def score(self, predictions: List[str], references: Union[None,List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
         """
@@ -164,6 +169,8 @@ class SummaQAMetric(BaseMetric):
         predictions: a list of string (one string per summary)
         a dict containing the probability score and f-score, averaged for the corpus
         """
+        self._initialize_metric()
+        
         avg_prob_arr = []
         avg_f1_arr = []
         

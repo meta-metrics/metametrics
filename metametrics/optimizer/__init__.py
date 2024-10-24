@@ -1,1 +1,0 @@
-from metametrics.optimizer.gp import GaussianProcessOptimizer

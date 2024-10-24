@@ -11,7 +11,9 @@ import sys
 import threading
 import psutil
 from typing import List, Union
-from .base_metric import BaseMetric
+
+from metametrics.metrics.base_metric import BaseMetric
+from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 class METEORMetric(BaseMetric):
     def __init__(self, meteor_jar_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "meteor-1.5.jar"), **kwargs):
@@ -26,29 +28,9 @@ class METEORMetric(BaseMetric):
             :param meteor_jar_path: location of METEOR jar
         """
         self.meteor_jar_path = meteor_jar_path
-        # Used to guarantee thread safety
-        self.lock = threading.Lock()
-        mem = '2G'
-        mem_available_gb = psutil.virtual_memory().available / 1E9
-        if mem_available_gb < 2:
-            logging.warning("There is less than 2GB of available memory.\n"
-                            "Will try with limiting Meteor to 1GB of memory but this might cause issues.\n"
-                            "If you have problems using Meteor, "
-                            "then you can try to lower the `mem` variable in meteor.py")
-            mem = '1G'
 
-        meteor_cmd = ['java', '-jar', '-Xmx{}'.format(mem), self.meteor_jar_path,
-                      '-', '-', '-stdio', '-l', 'en', '-norm']
-        env = os.environ.copy()
-        env['LC_ALL'] = "C"
-        self.meteor_p = subprocess.Popen(meteor_cmd,
-                                         cwd=os.path.dirname(os.path.abspath(__file__)),
-                                         env=env,
-                                         stdin=subprocess.PIPE,
-                                         stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE)
-
-        atexit.register(self.close)
+        if not (os.path.exists(self.meteor_jar_path) and os.path.isfile(self.meteor_jar_path)):
+            raise FileNotFoundError(f"The file '{self.meteor_jar_path}' does not exist or is not a file. Hint: do `pip install \".[meteor]\"`")
         
     def enc(self, s):
         return s.encode('utf-8')
@@ -80,7 +62,34 @@ class METEORMetric(BaseMetric):
         self.meteor_p.stdin.flush()
         return self.dec(self.meteor_p.stdout.readline()).strip()
     
+    def _initialize_metric(self):
+        # Used to guarantee thread safety
+        self.lock = threading.Lock()
+        mem = '2G'
+        mem_available_gb = psutil.virtual_memory().available / 1E9
+        if mem_available_gb < 2:
+            logging.warning("There is less than 2GB of available memory.\n"
+                            "Will try with limiting Meteor to 1GB of memory but this might cause issues.\n"
+                            "If you have problems using Meteor, "
+                            "then you can try to lower the `mem` variable in meteor.py")
+            mem = '1G'
+
+        meteor_cmd = ['java', '-jar', '-Xmx{}'.format(mem), self.meteor_jar_path,
+                      '-', '-', '-stdio', '-l', 'en', '-norm']
+        env = os.environ.copy()
+        env['LC_ALL'] = "C"
+        self.meteor_p = subprocess.Popen(meteor_cmd,
+                                         cwd=os.path.dirname(os.path.abspath(__file__)),
+                                         env=env,
+                                         stdin=subprocess.PIPE,
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE)
+
+        atexit.register(self.close)
+    
     def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
+        self._initialize_metric()
+        
         segment_scores = []
         eval_line = 'EVAL'
 

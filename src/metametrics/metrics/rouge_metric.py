@@ -1,17 +1,17 @@
 from typing import List, Union
-from .base_metric import BaseMetric
 import logging
-
 import tempfile
 import os
 import shutil
-
 from pyrouge import Rouge155
+
+from metametrics.metrics.base_metric import BaseMetric
+from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 class ROUGEMetric(BaseMetric):
     def __init__(self, rouge_type="rouge1", rouge_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), "ROUGE-1.5.5"), **kwargs):
         if not os.path.isdir(rouge_dir) and not os.path.isdir(os.environ['ROUGE_HOME']):
-            logging.error("ROUGE HOME is not found")
+            raise FileNotFoundError("ROUGE HOME is not found. Hint: do `pip install \".[rouge]\"`")
         
         self.r = Rouge155(rouge_dir=rouge_dir, rouge_args=None, log_level=logging.ERROR)
         self.rouge_type = rouge_type

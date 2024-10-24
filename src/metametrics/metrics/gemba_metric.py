@@ -1,9 +1,11 @@
 import pandas as pd
 import json
 from typing import List, Union
+
 from metametrics.metrics.GEMBA.gemba.gpt_api import GptApi
 from metametrics.metrics.GEMBA.gemba.gemba_mqm_utils import TEMPLATE_GEMBA_MQM, apply_template, parse_mqm_answer
 from metametrics.metrics.base_metric import BaseMetric
+from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 class GEMBA_MQM(BaseMetric):
     """
@@ -41,7 +43,7 @@ class GEMBA_MQM(BaseMetric):
     """
     def __init__(self, model: str, credentials: dict, source_lang: str, target_lang: str, verbose: bool=False):
         self.model = model 
-        self.verbose = verbose
+        self.verbose = validate_bool(verbose)
         self.source_lang = source_lang
         self.target_lang = target_lang
         

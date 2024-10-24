@@ -2,7 +2,6 @@
 
 from evaluate import load
 from typing import List, Union
-from .base_metric import BaseMetric
 
 import collections
 import six
@@ -15,16 +14,23 @@ from nltk.corpus import stopwords
 import numpy as np
 from scipy import spatial
 
+from metametrics.metrics.base_metric import BaseMetric
+from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
+
 class ROUGEWEMetric(BaseMetric):
     def __init__(self, n_gram=1, model_metric="f1", tokenize=False, **kwargs):
-        self.n_gram = n_gram
-        self.model_metric = "f1" if model_metric not in ["precision", "recall", "f1"] else model_metric
-        self.tokenize = tokenize
+        self.n_gram = validate_int(n_gram, valid_min=1)
+        self.model_metric = validate_argument_list(model_metric, ["precision", "recall", "f1"])
+        self.tokenize = validate_bool(tokenize)
         self.tokenizer = RegexpTokenizer(r'\w+')
         self.stopset = frozenset(stopwords.words('english'))
         self.stemmer = SnowballStemmer("english")
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        self.word_embeddings = self.load_embeddings(os.path.join(cur_dir, "embeddings/deps.words"))
+        self.embedding_file = os.path.join(cur_dir, "embeddings/deps.words")
+
+        if not (os.path.exists(self.embedding_file) and os.path.isfile(self.embedding_file)):
+            raise FileNotFoundError(f"The file '{self.embedding_file}' does not exist or is not a directory. Hint: do `pip install \".[rouge]\"`")
+        
         self.alpha = 0.5
         self.threshold = 0.8
 
@@ -146,8 +152,13 @@ class ROUGEWEMetric(BaseMetric):
                 vector = line[1::]
                 dict_embedding[key.lower()] = np.array([float(x) for x in vector])
         return dict_embedding
+    
+    def _initialize_metric(self):
+        self.word_embeddings = self.load_embeddings(self.embedding_file)
 
     def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:        
+        self._initialize_metric()
+        
         segment_scores = []
         
         for pred, refs in zip(predictions, references):

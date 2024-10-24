@@ -3,15 +3,16 @@ from tqdm import tqdm
 from PIL import Image
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
 from packaging import version
-from metametrics.metrics.base_metric import VisionToTextBaseMetric
 
 import torch
 import clip
-import tqdm
 import numpy as np
 import sklearn.preprocessing
 import collections
 import warnings
+
+from metametrics.metrics.base_metric import VisionToTextBaseMetric
+from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 class CLIPCapDataset(torch.utils.data.Dataset):
     def __init__(self, data, prefix='A photo depicts'):
@@ -81,21 +82,20 @@ def extract_all_images(images, model, device, batch_size=64, num_workers=8):
     return all_image_features
 
 class ClipScoreMetric(VisionToTextBaseMetric):
-    """
-
-    """
     def __init__(self, is_reference_only: bool, model_name: str, device: str, w: float=2.5, **kwargs):
         # self.clip_score_fn = partial(clip_score, model_name_or_path=model_name)
-        self.is_reference_only = is_reference_only
+        self.is_reference_only = validate_bool(is_reference_only)
         self.model_name = model_name
-
-        self.model, self.transform = clip.load("ViT-B/32", device=device, jit=False)
-        self.model.eval()
-
         self.device = device
         self.w = w
 
+    def _initialize_metric(self):
+        self.model, self.transform = clip.load("ViT-B/32", device=self.device, jit=False)
+        self.model.eval()
+
     def score(self, image_sources: List[str], text_predictions: List[str], text_references: Union[None, List[str]]=None, text_sources: Union[None, List[str]]=None) -> List[float]:
+        self._initialize_metric()
+        
         if self.is_reference_only:
             if isinstance(text_predictions, list):
                 text_predictions = extract_all_captions(text_predictions, self.model, self.device)

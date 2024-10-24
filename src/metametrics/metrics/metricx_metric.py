@@ -1,22 +1,19 @@
-from metametrics.metrics.base_metric import BaseMetric
 import json
-from torch.utils.data import Dataset
+from typing import Dict, List, Union, Optional, Tuple
+import os
+import uuid
+import copy
+import dataclasses
+import warnings
+
+import datasets
 import torch
 from torch import nn
 import transformers
 import transformers.modeling_outputs
 
-from typing import Dict, List, Union
-import datasets
-import os
-import torch
-import transformers
-import uuid
-
-import copy
-import dataclasses
-from typing import Optional, Tuple, Union
-import warnings
+from metametrics.metrics.base_metric import BaseMetric
+from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 BaseModelOutput = transformers.modeling_outputs.BaseModelOutput
 ModelOutput = transformers.modeling_outputs.ModelOutput
@@ -29,12 +26,10 @@ __HEAD_MASK_WARNING_MSG = (
     transformers.models.mt5.modeling_mt5.__HEAD_MASK_WARNING_MSG  # pylint: disable=protected-access
 )
 
-
 @dataclasses.dataclass
 class MT5ForRegressionOutput(ModelOutput):
   loss: Optional[torch.FloatTensor] = None
   predictions: torch.FloatTensor = None
-
 
 class MT5ForRegression(MT5PreTrainedModel):
   """MT5 model for regression."""
@@ -194,44 +189,12 @@ class MT5ForRegression(MT5PreTrainedModel):
 class MetricXMetric(BaseMetric):
     def __init__(self, is_qe: bool, tokenizer_name: str, model_name: str, batch_size: int,
                  max_input_length: int, bf16: bool, **kwargs):
-        self.reference_free = is_qe
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer_name)
+        self.reference_free = validate_bool(is_qe)
+        self.tokenizer_name = tokenizer_name
         self.bf16 = bf16
-        if self.bf16:
-            self.model = MT5ForRegression.from_pretrained(model_name, torch_dtype=torch.bfloat16)
-        else:
-            self.model = MT5ForRegression.from_pretrained(model_name)
-
-        self.max_input_length = max_input_length
-
-        if torch.cuda.is_available():
-            self.device = torch.device("cuda")
-            self.per_device_batch_size = batch_size // torch.cuda.device_count()
-        else:
-            self.device = torch.device("cpu")
-            self.per_device_batch_size = batch_size
-
-        self.model.to(self.device)
-        self.model.eval()
-
-        self.training_args = transformers.TrainingArguments(
-            per_device_eval_batch_size=self.per_device_batch_size,
-            dataloader_pin_memory=False,
-            output_dir=".",
-            bf16=self.bf16,
-        )
-        if self.per_device_batch_size == 1:
-            self.trainer = transformers.Trainer(
-                model=self.model,
-                args=self.training_args,
-            )
-        else:
-            data_collator = transformers.DataCollatorWithPadding(tokenizer=self.tokenizer, padding=True)
-            self.trainer = transformers.Trainer(
-                model=self.model,
-                args=self.training_args,
-                data_collator = data_collator
-            )
+        self.model_name = model_name
+        self.batch_size = validate_int(batch_size, valid_min=1)
+        self.max_input_length = validate_int(max_input_length, valid_min=1)
 
     def get_dataset(self, sources:Union[List[str], None], hypothesis:List[str], references:List[str]):
         """Gets the test dataset for prediction.
@@ -319,7 +282,47 @@ class MetricXMetric(BaseMetric):
         os.system(f"rm {input_file}")
         return ds
 
+    def _initialize_metric(self):
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.tokenizer_name)
+        if self.bf16:
+            self.model = MT5ForRegression.from_pretrained(self.model_name, torch_dtype=torch.bfloat16)
+        else:
+            self.model = MT5ForRegression.from_pretrained(self.model_name)
+
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+            self.per_device_batch_size = self.batch_size // torch.cuda.device_count()
+        else:
+            self.device = torch.device("cpu")
+            self.per_device_batch_size = self.batch_size
+
+        self.model.to(self.device)
+        self.model.eval()
+
+        self.training_args = transformers.TrainingArguments(
+            per_device_eval_batch_size=self.per_device_batch_size,
+            dataloader_pin_memory=False,
+            output_dir=cur_dir,
+            bf16=self.bf16,
+        )
+
+        if self.per_device_batch_size == 1:
+            self.trainer = transformers.Trainer(
+                model=self.model,
+                args=self.training_args,
+            )
+        else:
+            data_collator = transformers.DataCollatorWithPadding(tokenizer=self.tokenizer, padding=True)
+            self.trainer = transformers.Trainer(
+                model=self.model,
+                args=self.training_args,
+                data_collator = data_collator
+            )
+
     def score(self, predictions:List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[List[str]]]=None) -> List[float]:
+        self._initialize_metric()
+        
         ds = self.get_dataset(
             sources,
             predictions,

@@ -5,16 +5,25 @@ import numpy as np
 from bleurt import score
 
 from metametrics.metrics.base_metric import BaseMetric
+from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 class BLEURT20Metric(BaseMetric):
     def __init__(self, agg_method: str="mean", **kwargs):
         # The paths
-        cur_dir = os.path.dirname(os.path.abspath(__file__))
-        bleurt_model_path = os.path.join(cur_dir, "bleurt/BLEURT-20")     
-        self.scorer = score.BleurtScorer(bleurt_model_path)
-        self.agg_method = agg_method if agg_method in ["mean", "max"] else "mean"
+        self.agg_method = validate_argument_list(agg_method, ["mean", "max"])
+        self.cur_dir = os.path.dirname(os.path.abspath(__file__))
+        self.bleurt_model_path = os.path.join(self.cur_dir, "bleurt", "BLEURT-20")
+
+        # Check if the directory exists
+        if not (os.path.exists(self.bleurt_model_path) and os.path.isdir(self.bleurt_model_path)):
+            raise FileNotFoundError(f"The directory '{self.bleurt_model_path}' does not exist or is not a directory. Hint: do `pip install \".[bleurt]\"`")
+        
+    def _initialize_metric(self): 
+        self.scorer = score.BleurtScorer(self.bleurt_model_path)
 
     def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
+        self._initialize_metric()
+        
         # Note the references can be different for each prediction, so we should handle this case
         max_ref_length = max(len(ref_list) for ref_list in references)
         
