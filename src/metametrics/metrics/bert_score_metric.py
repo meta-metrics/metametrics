@@ -5,6 +5,10 @@ import numpy as np
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 class BERTScoreMetric(BaseMetric):
     """
         args:
@@ -27,5 +31,14 @@ class BERTScoreMetric(BaseMetric):
                                           lang="en", rescale_with_baseline=self.rescale_with_baseline)[self.model_metric]
         return all_scores
     
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=-1.0, max_val=1.0, invert=False, clip=False)
+    
+    def __eq__(self, other):
+        if isinstance(other, BERTScoreMetric):
+            self_vars = {k: v for k, v in vars(self).items() if k not in ['nthreads', 'hf_metric']}
+            other_vars = {k: v for k, v in vars(other).items() if k not in ['nthreads', 'hf_metric']}
+        
+            return self_vars == other_vars
+ 
+        return False

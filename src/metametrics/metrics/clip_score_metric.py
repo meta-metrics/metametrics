@@ -14,6 +14,10 @@ import warnings
 from metametrics.metrics.base_metric import VisionToTextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 class CLIPCapDataset(torch.utils.data.Dataset):
     def __init__(self, data, prefix='A photo depicts'):
         self.data = data
@@ -154,5 +158,14 @@ class ClipScoreMetric(VisionToTextBaseMetric):
                 per = self.w*np.clip(np.sum(images * text_predictions, axis=1), 0, None)
                 return per
 
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=0.0, max_val=100.0, invert=False, clip=False)
+
+    def __eq__(self, other):
+        if isinstance(other, ClipScoreMetric):
+            self_vars = {k: v for k, v in vars(self).items() if k not in ['device', 'model', 'transform']}
+            other_vars = {k: v for k, v in vars(other).items() if k not in ['device', 'model', 'transform']}
+        
+            return self_vars == other_vars
+ 
+        return False

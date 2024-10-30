@@ -9,6 +9,10 @@ from tqdm import tqdm
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 class YiSiModel(nn.Module):
     def __init__(self, model_name='bert-base-multilingual-cased', idf_weights: Dict[int, float] = None):
         super(YiSiModel, self).__init__()
@@ -108,5 +112,14 @@ class YiSiMetric(BaseMetric):
 
         return scores
     
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=True)
+
+    def __eq__(self, other):
+        if isinstance(other, YiSiMetric):
+            self_vars = {k: v for k, v in vars(self).items() if k not in ['device', 'model', 'tokenizer']}
+            other_vars = {k: v for k, v in vars(other).items() if k not in ['device', 'model', 'tokenizer']}
+        
+            return self_vars == other_vars
+ 
+        return False

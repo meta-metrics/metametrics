@@ -9,15 +9,24 @@ from pyrouge import Rouge155
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 class ROUGEMetric(BaseMetric):
     def __init__(self, rouge_type="rouge1", rouge_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), "ROUGE-1.5.5"), **kwargs):
         if not os.path.isdir(rouge_dir) and not os.path.isdir(os.environ['ROUGE_HOME']):
             raise FileNotFoundError("ROUGE HOME is not found. Hint: do `pip install \".[rouge]\"`")
         
-        self.r = Rouge155(rouge_dir=rouge_dir, rouge_args=None, log_level=logging.ERROR)
+        self.rouge_dir = rouge_dir
         self.rouge_type = rouge_type
+        
+    def _initialize_metric(self):
+        self.r = Rouge155(rouge_dir=self.rouge_dir, rouge_args=None, log_level=logging.ERROR)
 
     def score(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
+        self._initialize_metric()
+        
         segment_scores = []
         
         for pred, refs in zip(predictions, references):
@@ -39,6 +48,14 @@ class ROUGEMetric(BaseMetric):
 
         return segment_scores
     
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)
+    
+    def __eq__(self, other):
+        if isinstance(other, ROUGEMetric):
+            self_vars = {k: v for k, v in vars(self).items() if k not in ['r']}
+            other_vars = {k: v for k, v in vars(other).items() if k not in ['r']}
         
+            return self_vars == other_vars
+ 
+        return False

@@ -16,6 +16,10 @@ import numpy as np
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 class METEORMetric(BaseMetric):
     def __init__(self, meteor_jar_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "meteor-1.5.jar"), **kwargs):
         """
@@ -69,7 +73,7 @@ class METEORMetric(BaseMetric):
         mem = '2G'
         mem_available_gb = psutil.virtual_memory().available / 1E9
         if mem_available_gb < 2:
-            logging.warning("There is less than 2GB of available memory.\n"
+            logger.warning("There is less than 2GB of available memory.\n"
                             "Will try with limiting Meteor to 1GB of memory but this might cause issues.\n"
                             "If you have problems using Meteor, "
                             "then you can try to lower the `mem` variable in meteor.py")
@@ -115,5 +119,12 @@ class METEORMetric(BaseMetric):
 
         return segment_scores
 
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)
+
+    def __eq__(self, other):
+        if isinstance(other, METEORMetric):
+            return self.meteor_jar_path == other.meteor_jar_path
+ 
+        return False
+    

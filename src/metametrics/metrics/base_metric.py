@@ -4,6 +4,10 @@ import torch
 import numpy as np
 import gc
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 EPSILON = 1e-5
 
 class BaseMetric(ABC):
@@ -39,6 +43,10 @@ class BaseMetric(ABC):
         self._cleanup()
         return result
     
+    @abstractmethod
+    def __eq__(self, other):
+        raise NotImplementedError()
+    
 class VisionToTextBaseMetric(ABC):
     @abstractmethod
     def score(self, image_sources: List[torch.Tensor], text_predictions: List[str], text_references: Union[None, List[List[str]]]=None, text_sources: Union[None, List[str]]=None) -> List[float]:
@@ -71,3 +79,7 @@ class VisionToTextBaseMetric(ABC):
         result = self.score(image_sources, text_predictions, text_references, text_sources)
         self._cleanup()
         return result
+    
+    @abstractmethod
+    def __eq__(self, other):
+        raise NotImplementedError()

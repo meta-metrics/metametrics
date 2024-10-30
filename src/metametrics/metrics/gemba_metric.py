@@ -8,6 +8,10 @@ from metametrics.metrics.GEMBA.gemba.gemba_mqm_utils import TEMPLATE_GEMBA_MQM, 
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 class GEMBA_MQM_Metric(BaseMetric):
     """
         IMPORTANT!
@@ -79,5 +83,11 @@ class GEMBA_MQM_Metric(BaseMetric):
         answers_list = [x['answer'] for x in answers]
         return answers_list
     
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=-25.0, max_val=0.0, invert=False, clip=False)
+    
+    def __eq__(self, other):
+        if isinstance(other, GEMBA_MQM_Metric):
+            return vars(self) == vars(other)
+ 
+        return False

@@ -13,10 +13,8 @@ logging.basicConfig(level=logging.INFO)
 
 extras_require = {
     # Tasks
-    "rewardbench": ["accelerate>=0.30.1,<=0.34.2", "bitsandbytes>=0.39.0", "black", "datasets>=2.16.0,<=2.21.0",
-                    "deepspeed", "einops", "flake8>=6.0", "fschat", "hf_transfer",
-                    "isort>=5.12.0", "peft", "tabulate", "tokenizers", "wandb",
-                    "tiktoken==0.6.0", "transformers==4.43.4", "trl>=0.8.2"], # For llama3
+    "rewardbench": ["rewardbench @ git+https://github.com/davidanugraha/reward-bench.git"],
+    "wmt-eval": ["mt-metrics-eval @ git+https://github.com/davidanugraha/mt-metrics-eval.git"],
     
     # Metrics
     "gemba": ["openai>=1.0.0", "openai-clip", "termcolor", "pexpect", "ipdb",
@@ -31,6 +29,13 @@ extras_require = {
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
+    
+def get_console_scripts() -> List[str]:
+    console_scripts = ["metametrics-cli = metametrics.cli:main"]
+    if os.environ.get("ENABLE_SHORT_CONSOLE", "1").lower() in ["true", "1"]:
+        console_scripts.append("mm = metametrics.cli:main")
+
+    return console_scripts
 
 # Define the base class for extra installs
 class CustomInstall(install):
@@ -50,7 +55,6 @@ class CustomInstall(install):
         self.install_metric_rouge()
         self.install_metric_meteor()
         self.install_spacy()
-        self.install_task_wmt()
     
     @staticmethod
     def install_metric_bleurt():   
@@ -123,20 +127,8 @@ class CustomInstall(install):
     
     @staticmethod
     def install_spacy():
-        # Install spacy for SummaQA
+        # Install spacy for SummaQA (Installing together with the rest seems to ruin dependencies)
         subprocess.run("pip install spacy", shell=True, check=True, text=True, capture_output=True)
-    
-    @staticmethod
-    def install_task_wmt():
-        # Navigate to the tasks/mteval
-        os.chdir(os.path.join(CustomInstall.root_dir, 'src', 'metametrics', 'metametrics_tasks'))
-        os.system("rm -rf mt-metrics-eval")
-        if not os.path.isdir('mt-metrics-eval'):
-            logging.info("Cloning mt-metrics-eval ...")
-            subprocess.run(["git", "clone", "https://github.com/google-research/mt-metrics-eval.git"])
-        os.chdir("mt-metrics-eval")
-        logging.info("Installing mt-metrics-eval ...")
-        subprocess.run(["pip", "install", "."], check=True)
 
 setup(
     name="metametrics",
@@ -147,9 +139,9 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="Apache 2.0 License",
-    url="https://github.com/meta-metrics/meta-metrics",
+    url="https://github.com/meta-metrics/metametrics",
     project_urls={
-        "Bug Tracker": "https://github.com/meta-metrics/meta-metrics/issues",
+        "Bug Tracker": "https://github.com/meta-metrics/metametrics/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -177,9 +169,11 @@ setup(
         "dill==0.3.1.1", # for apache-beam
         "regex",
         "gdown",
+        "PyYAML",
         "tqdm"
     ],
     package_dir={"": "src"},
+    entry_points={"console_scripts": get_console_scripts()},
     packages = find_packages("src"),
     extras_require=extras_require,
     python_requires=">=3.10",

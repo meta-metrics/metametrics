@@ -16,6 +16,10 @@ import transformers.modeling_outputs
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 BaseModelOutput = transformers.modeling_outputs.BaseModelOutput
 ModelOutput = transformers.modeling_outputs.ModelOutput
 
@@ -333,5 +337,15 @@ class MetricXMetric(BaseMetric):
         predictions, _, _ = self.trainer.predict(test_dataset=ds["test"])
         return predictions
     
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=0.0, max_val=25.0, invert=True, clip=True)
+
+    def __eq__(self, other):
+        if isinstance(other, MetricXMetric):
+            to_be_compared = ['reference_free', 'tokenizer_name', 'bf16', 'model_name', 'batch_size', 'max_input_length']
+            self_vars = {k: v for k, v in vars(self).items() if k in to_be_compared}
+            other_vars = {k: v for k, v in vars(other).items() if k in to_be_compared}
+        
+            return self_vars == other_vars
+ 
+        return False

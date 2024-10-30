@@ -6,6 +6,10 @@ from metametrics.metrics.BARTScore.bart_score import BARTScorer
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 class BARTScoreMetric(BaseMetric):
     def __init__(self, model_checkpoint: str='facebook/bart-large-cnn', max_length: int=1024,
                  agg_method: str="max", batch_size: int=8, device: str='cuda:0', **kwargs):
@@ -28,5 +32,14 @@ class BARTScoreMetric(BaseMetric):
         all_scores = self.bart_scorer.multi_ref_score(predictions, references, agg=self.agg_method, batch_size=self.batch_size)
         return all_scores
     
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)
+
+    def __eq__(self, other):
+        if isinstance(other, BARTScoreMetric):
+            self_vars = {k: v for k, v in vars(self).items() if k not in ['device', 'bart_scorer']}
+            other_vars = {k: v for k, v in vars(other).items() if k not in ['device', 'bart_scorer']}
+        
+            return self_vars == other_vars
+ 
+        return False

@@ -7,6 +7,10 @@ from bleurt import score
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 class BLEURT20Metric(BaseMetric):
     def __init__(self, agg_method: str="mean", **kwargs):
         # The paths
@@ -55,5 +59,14 @@ class BLEURT20Metric(BaseMetric):
         
         return aggregated_scores
     
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=True)
+
+    def __eq__(self, other):
+        if isinstance(other, BLEURT20Metric):
+            self_vars = {k: v for k, v in vars(self).items() if k not in ['scorer']}
+            other_vars = {k: v for k, v in vars(other).items() if k not in ['scorer']}
+        
+            return self_vars == other_vars
+ 
+        return False

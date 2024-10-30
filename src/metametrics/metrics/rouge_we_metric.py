@@ -17,6 +17,10 @@ from scipy import spatial
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 class ROUGEWEMetric(BaseMetric):
     def __init__(self, n_gram=1, model_metric="f1", tokenize=False, **kwargs):
         self.n_gram = validate_int(n_gram, valid_min=1)
@@ -179,6 +183,14 @@ class ROUGEWEMetric(BaseMetric):
 
         return segment_scores
     
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)
     
+    def __eq__(self, other):
+        if isinstance(other, ROUGEWEMetric):
+            self_vars = {k: v for k, v in vars(self).items() if k in ['n_gram', 'model_metric', 'tokenize']}
+            other_vars = {k: v for k, v in vars(other).items() if k in ['n_gram', 'model_metric', 'tokenize']}
+        
+            return self_vars == other_vars
+ 
+        return False

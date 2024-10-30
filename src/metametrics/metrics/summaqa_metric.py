@@ -14,6 +14,10 @@ import numpy as np
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
+from metametrics.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
 class QA_Bert():
     def __init__(self):
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -190,5 +194,14 @@ class SummaQAMetric(BaseMetric):
             # Should be f1
             return avg_f1_arr
         
-    def normalize(cls, scores: List[float]) -> np.ndarray:
+    def normalize(self, scores: List[float]) -> np.ndarray:
         return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)
+
+    def __eq__(self, other):
+        if isinstance(other, SummaQAMetric):
+            self_vars = {k: v for k, v in vars(self).items() if k not in ['model', 'nlp_web_sm', 'nlp_web_md']}
+            other_vars = {k: v for k, v in vars(other).items() if k not in ['model', 'nlp_web_sm', 'nlp_web_md']}
+        
+            return self_vars == other_vars
+ 
+        return False
