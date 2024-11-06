@@ -1,0 +1,9 @@
+### method
+modality: text
+output_dir: "saves/example_summarization"
+overwrite_output_dir: true
+
+### Config path
+optimizer_config_path: examples/example_text/optimizer_config.yaml
+metrics_config_path: examples/example_text/text_metrics.json
+dataset_config_path: examples/example_text/dataset_config.yaml
