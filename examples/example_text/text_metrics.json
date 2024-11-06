@@ -1,5 +1,5 @@
-{
-    "bartscore": {
+[
+    {
         "metric_name": "bartscore",
         "metric_args": {
             "model_checkpoint": "facebook/bart-large-cnn",
@@ -9,14 +9,14 @@
             "device": "cuda:0"
         }
     },
-    "bleu": {
+    {
         "metric_name": "bleu",
         "metric_args": {}
     },
-    "bleurt": {
+    {
         "metric_name": "bleurt",
         "metric_args": {
             "agg_method": "max"
         }
     }
-}
+]
