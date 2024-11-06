@@ -337,8 +337,18 @@ class MetricXMetric(BaseMetric):
         predictions, _, _ = self.trainer.predict(test_dataset=ds["test"])
         return predictions
     
-    def normalize(self, scores: List[float]) -> np.ndarray:
-        return super().normalize(scores, min_val=0.0, max_val=25.0, invert=True, clip=True)
+    @property
+    def min_val(self) -> Optional[float]:
+        return 0.0
+
+    @property
+    def max_val(self) -> Optional[float]:
+        return 25.0
+
+    @property
+    def higher_is_better(self) -> bool:
+        """Indicates if a higher value is better for this metric."""
+        return False
 
     def __eq__(self, other):
         if isinstance(other, MetricXMetric):

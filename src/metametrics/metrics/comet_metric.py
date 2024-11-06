@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import List, Union, Optional
 from pathlib import Path
 
 from comet import load_from_checkpoint
@@ -10,18 +10,19 @@ from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
+from metametrics.utils.constants import HF_TOKEN
 
 logger = get_logger(__name__)
 
 class COMETMetric(BaseMetric):
     def __init__(self, comet_model: str="Unbabel/XCOMET-XXL", batch_size: int=8, gpus: int=1,
-                 reference_free: bool=False, hf_token: str="", **kwargs):
+                 reference_free: bool=False, hf_token: str=HF_TOKEN, **kwargs):
         # Choose model from the model hub
         self.comet_model = comet_model
         self.batch_size = validate_int(batch_size, valid_min=1)
         self.gpus = validate_int(gpus, valid_min=0)
         self.reference_free = validate_bool(reference_free)
-        self.hf_token = hf_token if hf_token != "" else os.environ['HF_TOKEN']
+        self.hf_token = hf_token
         if self.hf_token == "":
             logger.warning("HuggingFace Token is not filled, this may cause issues when downloading the model!")
 
@@ -53,8 +54,18 @@ class COMETMetric(BaseMetric):
             data = [{"src": src, "mt": mt, "ref": ref} for src, mt, ref in zip(sources, predictions, references)]
         return self.model.predict(data, batch_size=self.batch_size, gpus=self.gpus).scores
 
-    def normalize(self, scores: List[float]) -> np.ndarray:
-        return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)
+    @property
+    def min_val(self) -> Optional[float]:
+        return 0.0
+
+    @property
+    def max_val(self) -> Optional[float]:
+        return 1.0
+
+    @property
+    def higher_is_better(self) -> bool:
+        """Indicates if a higher value is better for this metric."""
+        return True
 
     def __eq__(self, other):
         if isinstance(other, COMETMetric):

@@ -1,7 +1,61 @@
 from typing import List, Union
 from abc import ABC, abstractmethod
+import numpy as np
+
 from metametrics.metrics import *
 from metametrics.optimizer import *
+
+class MetricManager:
+    # Dictionary to store registered metric classes
+    _registered_metrics = {
+        "bleu": BLEUMetric,
+        "bartscore": BARTScoreMetric,
+        "bertscore": BERTScoreMetric,
+        "bleurt": BLEURT20Metric,
+        "chrf": chrFMetric,
+        "comet": COMETMetric,
+        "metricx": MetricXMetric,
+        "meteor": METEORMetric,
+        "rouge": ROUGEMetric,
+        "rougewe": ROUGEWEMetric,
+        "summaqa": SummaQAMetric,
+        "yisi": YiSiMetric,
+        "gemba_mqm": GEMBA_MQM_Metric,
+        "clipscore": ClipScoreMetric,
+    }
+
+    def __init__(self):
+        pass
+    
+    @classmethod
+    def register_metric(self, metric_name, metric_class):
+        """Registers a new metric to _registered_metrics."""
+        if not issubclass(metric_class, BaseMetric) and not issubclass(metric_class, VisionToTextBaseMetric):  # Ensure it inherits from BaseMetric or a similar base class
+            raise TypeError(f"Metric class `{metric_class}` must inherit from BaseMetric")
+        self._registered_metrics[metric_name] = metric_class
+
+    @classmethod
+    def get_metric(self, metric_name, metric_args):
+        """Fetches the specified metric by name from _registered_metrics."""
+        metric_class = self._registered_metrics.get(metric_name)
+        if metric_class is None:
+            raise ValueError(f"Metric name '{metric_name}' is not recognized!")
+        return metric_class(**metric_args)
+    
+    @classmethod
+    def add_metric(cls, metric_name, **metric_args):
+        """Add metric to MetaMetrics"""
+        raise NotImplementedError()
+    
+    @classmethod
+    def normalize(self, scores: List[float], min_val: float, max_val: float, greater_is_better: bool) -> np.ndarray:
+        # Normalize to [0, 1] where greater value indicate better performance in respective metric
+        scores = np.clip(scores, min_val, max_val)
+        scores = (scores - min_val) / (max_val - min_val)
+        if not greater_is_better:
+            scores = 1 - scores
+            
+        return scores
 
 class MetaMetrics(ABC):
     # Dictionary to store registered metric classes

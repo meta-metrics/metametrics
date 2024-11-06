@@ -1,38 +1,63 @@
-
+import os
 import json
 from bayes_opt import BayesianOptimization
 import numpy as np
+from dataclasses import dataclass, field
+from transformers import HfArgumentParser
 
-from metametrics.optimizer.base_optimizer import BaseOptimizer
+from metametrics.optimizer.base_optimizer import BaseOptimizer, OBJECTIVE_FN_MAP
 from metametrics.utils.logging import get_logger
+from metametrics.utils.constants import MODEL_RANDOM_SEED
 
 logger = get_logger(__name__)
 
+@dataclass
+class GaussianProcessArguments:
+    r"""
+    Arguments pertaining to which GaussianProcessOptimizer will be initialized with.
+    """
+    objective_fn: str = field(
+        metadata={"help": "Objective function name for Gaussian Process Optimization."}
+    )
+    init_points: int = field(
+        default=5,
+        metadata={"help": "Number of initial points for Bayesian optimization."}
+    )
+    n_iter: int = field(
+        default=100,
+        metadata={"help": "Number of iterations for the optimizer."}
+    )
+    seed: int = field(
+        default=MODEL_RANDOM_SEED,
+        metadata={"help": "Random seed for reproducibility."}
+    )
+
 class GaussianProcessOptimizer(BaseOptimizer):
-    def __init__(self, objective_fn, init_points=5, n_iter=100, seed=1):
-        self.objective_fn = objective_fn
-        self.init_points = init_points
-        self.n_iter = n_iter
-        self.seed = seed
-        self.need_calibrate = True
-        self.optimizer = {}
-        
-    def __init__(self, config_file):
-        with open(config_file, 'r') as file:
-            json_content = json.load(file)
-            
-        self.init_points = json_content.get("init_points", 5)
-        self.n_iter = json_content.get("n_iter", 100)
-        self.seed = json_content.get("seed", 1)
-        self.need_calibrate = True
-        self.optimizer = {}
-        
-        # Register objective function based on user-provided string
-        objective_fn_str = json_content.get("objective_fn")
-        if objective_fn_str in objective_fn_map:
-            self.objective_fn = objective_fn_map[objective_fn_str]
+    def __init__(self, args: GaussianProcessArguments):
+        if args.objective_fn in OBJECTIVE_FN_MAP:
+            self.objective_fn = OBJECTIVE_FN_MAP[args.objective_fn]
         else:
-            raise ValueError(f"Objective function '{objective_fn_str}' is not recognized.")
+            raise ValueError(f"Objective function '{args.objective_fn}' is not recognized!")
+        
+        self.init_points = args.init_points
+        self.n_iter = args.n_iter
+        self.seed = args.seed
+        self.need_calibrate = True
+        self.optimizer = {}
+        
+    def init_from_config_file(self, config_file_path: str):
+        parser = HfArgumentParser(GaussianProcessArguments)
+
+        parsed_args = None
+        if config_file_path.endswith(".yaml") or config_file_path.endswith(".yml"):
+            parsed_args = parser.parse_yaml_file(os.path.abspath(config_file_path))
+        elif config_file_path.endswith(".json"):
+            parsed_args = parser.parse_json_file(os.path.abspath(config_file_path))
+        else:
+            logger.error("Got invalid dataset config path: {}".format(config_file_path))
+            raise ValueError("dataset config path should be either JSON or YAML but got {} instead".format(config_file_path))
+        
+        self.__init__(parsed_args)
 
     def black_box_function(self, metric_array, target_scores, metric_weights):
         """Calculate the objective function score."""

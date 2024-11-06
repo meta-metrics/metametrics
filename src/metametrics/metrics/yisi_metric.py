@@ -3,12 +3,11 @@ import torch.nn as nn
 from transformers import AutoTokenizer, AutoModel
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 from tqdm import tqdm
 
 from metametrics.metrics.base_metric import BaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
-
 from metametrics.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -112,8 +111,18 @@ class YiSiMetric(BaseMetric):
 
         return scores
     
-    def normalize(self, scores: List[float]) -> np.ndarray:
-        return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=True)
+    @property
+    def min_val(self) -> Optional[float]:
+        return 0.0
+
+    @property
+    def max_val(self) -> Optional[float]:
+        return 1.0
+
+    @property
+    def higher_is_better(self) -> bool:
+        """Indicates if a higher value is better for this metric."""
+        return True
 
     def __eq__(self, other):
         if isinstance(other, YiSiMetric):

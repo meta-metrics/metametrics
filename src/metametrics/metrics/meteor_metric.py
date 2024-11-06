@@ -10,7 +10,7 @@ import subprocess
 import sys
 import threading
 import psutil
-from typing import List, Union
+from typing import List, Union, Optional
 import numpy as np
 
 from metametrics.metrics.base_metric import BaseMetric
@@ -119,8 +119,18 @@ class METEORMetric(BaseMetric):
 
         return segment_scores
 
-    def normalize(self, scores: List[float]) -> np.ndarray:
-        return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=False)
+    @property
+    def min_val(self) -> Optional[float]:
+        return 0.0
+
+    @property
+    def max_val(self) -> Optional[float]:
+        return 1.0
+
+    @property
+    def higher_is_better(self) -> bool:
+        """Indicates if a higher value is better for this metric."""
+        return True
 
     def __eq__(self, other):
         if isinstance(other, METEORMetric):

@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Optional
 from tqdm import tqdm
 from PIL import Image
 from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
@@ -157,9 +157,19 @@ class ClipScoreMetric(VisionToTextBaseMetric):
 
                 per = self.w*np.clip(np.sum(images * text_predictions, axis=1), 0, None)
                 return per
+            
+    @property
+    def min_val(self) -> Optional[float]:
+        return 0.0
 
-    def normalize(self, scores: List[float]) -> np.ndarray:
-        return super().normalize(scores, min_val=0.0, max_val=100.0, invert=False, clip=False)
+    @property
+    def max_val(self) -> Optional[float]:
+        return 100.0
+
+    @property
+    def higher_is_better(self) -> bool:
+        """Indicates if a higher value is better for this metric."""
+        return True
 
     def __eq__(self, other):
         if isinstance(other, ClipScoreMetric):

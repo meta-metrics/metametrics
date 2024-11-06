@@ -1,5 +1,5 @@
 from evaluate import load
-from typing import List, Union
+from typing import List, Union, Optional
 import numpy as np
 
 from metametrics.metrics.base_metric import BaseMetric
@@ -31,9 +31,19 @@ class BERTScoreMetric(BaseMetric):
                                           lang="en", rescale_with_baseline=self.rescale_with_baseline)[self.model_metric]
         return all_scores
     
-    def normalize(self, scores: List[float]) -> np.ndarray:
-        return super().normalize(scores, min_val=-1.0, max_val=1.0, invert=False, clip=False)
-    
+    @property
+    def min_val(self) -> Optional[float]:
+        return -1.0
+
+    @property
+    def max_val(self) -> Optional[float]:
+        return 1.0
+
+    @property
+    def higher_is_better(self) -> bool:
+        """Indicates if a higher value is better for this metric."""
+        return True
+
     def __eq__(self, other):
         if isinstance(other, BERTScoreMetric):
             self_vars = {k: v for k, v in vars(self).items() if k not in ['nthreads', 'hf_metric']}

@@ -1,5 +1,5 @@
 import os
-from typing import List, Union
+from typing import List, Union, Optional
 import numpy as np
 
 from bleurt import score
@@ -59,8 +59,18 @@ class BLEURT20Metric(BaseMetric):
         
         return aggregated_scores
     
-    def normalize(self, scores: List[float]) -> np.ndarray:
-        return super().normalize(scores, min_val=0.0, max_val=1.0, invert=False, clip=True)
+    @property
+    def min_val(self) -> Optional[float]:
+        return 0.0
+
+    @property
+    def max_val(self) -> Optional[float]:
+        return 1.0
+
+    @property
+    def higher_is_better(self) -> bool:
+        """Indicates if a higher value is better for this metric."""
+        return True
 
     def __eq__(self, other):
         if isinstance(other, BLEURT20Metric):
