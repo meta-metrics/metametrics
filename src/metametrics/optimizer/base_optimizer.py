@@ -1,5 +1,7 @@
 from typing import List, Union
 from abc import ABC, abstractmethod
+    
+from scipy import stats
 
 class BaseOptimizer(ABC):
     @abstractmethod
@@ -13,8 +15,6 @@ class BaseOptimizer(ABC):
     @abstractmethod
     def predict(self, metrics_df):
         raise NotImplementedError()
-    
-from scipy import stats
 
 def reward_ranking_acc(y_test, y_pred):
     correct_count = 0

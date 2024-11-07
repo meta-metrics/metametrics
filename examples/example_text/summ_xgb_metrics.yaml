@@ -1,5 +1,6 @@
 ### method
 modality: text
+normalize_metrics: true
 output_dir: "saves/example_summarization"
 overwrite_output_dir: true
 

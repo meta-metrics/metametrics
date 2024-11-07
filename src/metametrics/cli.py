@@ -5,6 +5,7 @@ import sys
 from enum import Enum, unique
 
 from metametrics.utils.logging import get_logger
+from metametrics.utils.constants import VERSION
 from metametrics.tasks.run import run_metametrics
 
 USAGE = (

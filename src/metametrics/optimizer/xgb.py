@@ -140,13 +140,13 @@ class XGBoostOptimizer(BaseOptimizer):
     def _initialize_xgboost_model(self):
         if self.xgb_type == 'regressor':
             self.optimizer = XGBRegressor(**self.fixed_model_params)
-            self.hpm_optimizer_fn = 
+            self.hpm_optimizer_fn = self._perform_hpm_optimization_standard
         elif self.xgb_type == 'classifier':
             self.optimizer = XGBClassifier(**self.fixed_model_params)
-            self.hpm_optimizer_fn = 
+            self.hpm_optimizer_fn = self._perform_hpm_optimization_standard
         elif self.xgb_type == 'ranker':
             self.optimizer = XGBRanker(**self.fixed_model_params)
-            self.hpm_optimizer_fn = 
+            self.hpm_optimizer_fn = self._perform_hpm_optimization_rank
         else:
             raise NotImplementedError(f"XGBoost of type {self.xgb_type} is currently not recognized!")
         
@@ -244,10 +244,7 @@ class XGBoostOptimizer(BaseOptimizer):
             
             performance_history.append(self.objective_fn(self.optimizer.predict(metrics_df), target_scores))
             model_history.append(self.optimizer)
-            
-            # os.makedirs(os.path.join(CUR_DIR, f"output_xgb/{exp_name}/saved_models"), exist_ok=True)
-            # best_model.save_model(os.path.join(CUR_DIR, f"output_xgb/{exp_name}/saved_models/iter_{i}.json"))
-            
+
             # Get feature importances
             feature_importance = self.optimizer.feature_importances_
             importance_df = pd.DataFrame({
