@@ -3,12 +3,14 @@ import sys
 import json
 import yaml
 from typing import Any, Dict, Optional
+
+import pandas as pd
 from dataclasses import dataclass, field
 from transformers import HfArgumentParser
 
-from metametrics.tasks.text import run_metametrics_text
-from metametrics.tasks.vision import run_metametrics_vision
-from metametrics.tasks.reward import run_metametrics_reward
+from metametrics.tasks.text import MetaMetricsText
+from metametrics.tasks.vision import MetaMetricsVision
+from metametrics.tasks.reward import MetaMetricsReward
 
 from metametrics.utils.logging import get_logger
 from metametrics.utils.loader import parse_dataset_args
@@ -50,6 +52,13 @@ class MainArguments:
     cache_dir: Optional[str] = field(
         metadata={"help": "Cache directory for the datasets and models."}
     )
+    
+    def __post_init__(self):
+        # Check if output_dir exists and if overwrite_output_dir is False
+        if os.path.exists(self.output_dir) and not self.overwrite_output_dir:
+            raise FileExistsError(
+                f"The output directory '{self.output_dir}' already exists and `overwrite_output_dir` is set to False."
+            )
 
 def get_main_args(args: Optional[Dict[str, Any]] = None) -> MainArguments:
     parser = HfArgumentParser(MainArguments)
@@ -128,13 +137,88 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
     optimizer = parse_optimizer(main_args.optimizer_config_path)
     dataset_dict = parse_dataset_args(main_args.dataset_config_path, modality=main_args.modality)
     metrics_list = parse_metrics_dict(main_args.metrics_config_path)
+    normalize_metrics = main_args.normalize_metrics
+    output_dir = os.path.abspath(main_args.output_dir)
 
     if main_args.modality == "text":
-        run_metametrics_text(optimizer, dataset_dict, metrics_list,
-                             main_args.normalize_metrics, main_args.output_dir, main_args.overwrite_output_dir)
+        task_pipeline = MetaMetricsText()
     elif main_args.modality == "vision":
-        run_metametrics_vision(optimizer, dataset_dict, metrics_list)
+        task_pipeline = MetaMetricsVision()
     elif main_args.modality == "reward":
-        run_metametrics_reward(optimizer, dataset_dict, metrics_list)
+        task_pipeline = MetaMetricsReward()
     else:
         raise NotImplementedError(f"Modality `{main_args.modality}` is not recognized!")
+    
+    
+    # Add metrics
+    for metric in metrics_list:
+        task_pipeline.add_metric(metric.get("metric_name"), metric.get("metric_args"))
+    
+    # Set optimizer
+    task_pipeline.set_optimizer(optimizer.get("optimizer_name"), optimizer.get("optimizer_args"))
+    
+    # Evaluate train metrics
+    train_metric_scores = task_pipeline.evaluate_metrics(dataset_dict["train"], normalize_metrics)
+    
+    # Create unique metric names for the DataFrame
+    unique_names = {}
+    train_scores_dict = {}
+    
+    for name, scores in zip([metric["metric_name"] for metric in metrics_list], train_metric_scores):
+        # Create a unique name if duplicate
+        if unique_names[name] > 0:
+            unique_name = f"{name}_{unique_names[name]}"
+        else:
+            unique_name = name
+            unique_names[name] = 0
+
+        unique_names[name] += 1
+        train_scores_dict[unique_name] = scores
+        
+    # Convert to DataFrame
+    train_scores_df = pd.DataFrame(train_scores_dict)
+    
+    # Save train_scores_df
+    os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
+    train_scores_path = os.path.join(output_dir, "train_scores.csv")
+    train_scores_df.to_csv(train_scores_path, index=False)
+
+    # Calibrate
+    task_pipeline.calibrate(train_scores_df, dataset_dict["train"]["target_scores"])
+    
+    # Evaluate task
+    eval_metric_scores = task_pipeline.evaluate_metrics(dataset_dict["validation"], normalize_metrics)
+    
+    # Repeat the process for validation scores with unique names
+    eval_scores_dict = {}
+    unique_names.clear()  # Reset the counter for validation
+    for name, scores in zip([m["metric_name"] for m in metrics_list], eval_metric_scores):
+        if unique_names[name] > 0:
+            unique_name = f"{name}_{unique_names[name]}"
+        else:
+            unique_name = name
+        unique_names[name] += 1
+        eval_scores_dict[unique_name] = scores
+    
+    eval_scores_df = pd.DataFrame(eval_scores_dict)
+    
+    # Save train_scores_df
+    os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
+    eval_scores_path = os.path.join(output_dir, "eval_scores.csv")
+    eval_scores_df.to_csv(eval_scores_path, index=False)
+    
+    pred, result = task_pipeline.evaluate_metametrics(eval_scores_df, dataset_dict["validation"]["target_scores"])
+    
+    # Save predictions
+    pred_df = pd.DataFrame(pred, columns=["predictions"])
+    human_scores_df = pd.DataFrame(dataset_dict["validation"]["target_scores"])
+    pred_df = pd.concat([pred_df, human_scores_df], axis=1)
+    pred_path = os.path.join(output_dir, "pred_human_scores.csv")
+    pred_df.to_csv(pred_path, index=False)
+
+    # Save results
+    result_path = os.path.join(output_dir, "result.csv")
+    if isinstance(result, dict):
+        pd.DataFrame([result]).to_csv(result_path, index=False)
+    else:
+        pd.DataFrame(result).to_csv(result_path, index=False)
