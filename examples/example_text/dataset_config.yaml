@@ -1,0 +1,11 @@
+### Dataset
+dataset:
+  summeval:
+    hf_hub_url: davidanugraha/summeval
+    columns:
+      src_text: src
+      hyp_text: hyp
+      ref_text: ref
+max_samples: 20000
+overwrite_cache: true
+preprocessing_num_workers: 16
