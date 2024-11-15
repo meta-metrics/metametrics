@@ -34,10 +34,12 @@ def validate_real(arg: float, valid_min: float = None, valid_max: float = None) 
     Raises:
         ValueError: If the argument is not within the specified range.
     """
-    if valid_min is not None and arg < valid_min:
-        raise ValueError(f"Invalid argument '{arg}'. Must be greater than or equal to {valid_min}.")
-    if valid_max is not None and arg > valid_max:
-        raise ValueError(f"Invalid argument '{arg}'. Must be less than or equal to {valid_max}.")
+    if valid_min is not None:
+        if arg < valid_min:
+            raise ValueError(f"Invalid argument '{arg}'. Must be greater than or equal to {valid_min}.")
+    if valid_max is not None:
+        if arg > valid_max:
+            raise ValueError(f"Invalid argument '{arg}'. Must be less than or equal to {valid_max}.")
     
     return arg
 
@@ -56,10 +58,12 @@ def validate_int(arg: int, valid_min: int = None, valid_max: int = None) -> int:
     Raises:
         ValueError: If the argument is not within the specified range.
     """
-    if valid_min is not None and arg < valid_min:
-        raise ValueError(f"Invalid argument '{arg}'. Must be greater than or equal to {valid_min}.")
-    if valid_max is not None and arg > valid_max:
-        raise ValueError(f"Invalid argument '{arg}'. Must be less than or equal to {valid_max}.")
+    if valid_min is not None: 
+        if arg < valid_min:
+            raise ValueError(f"Invalid argument '{arg}'. Must be greater than or equal to {valid_min}.")
+    if valid_max is not None:
+        if arg > valid_max:
+            raise ValueError(f"Invalid argument '{arg}'. Must be less than or equal to {valid_max}.")
     
     return arg
     

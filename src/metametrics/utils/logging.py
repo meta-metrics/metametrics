@@ -50,7 +50,7 @@ def _setup_logger() -> None:
         root_logger.setLevel(_determine_log_level())
         root_logger.propagate = False
 
-def create_logger(logger_name: Optional[str] = None) -> "logging.Logger":
+def get_logger(logger_name: Optional[str] = None) -> "logging.Logger":
     """
     Generates a logger with the provided name, or defaults to the root logger's name.
     """
