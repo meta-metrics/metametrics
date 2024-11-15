@@ -14,12 +14,11 @@ from metametrics.metrics.rouge_we_metric import ROUGEWEMetric
 from metametrics.metrics.meteor_metric import METEORMetric
 from metametrics.metrics.summaqa_metric import SummaQAMetric
 from metametrics.metrics.bart_score_metric import BARTScoreMetric
-from metametrics.metrics.armoRM_metric import ArmoRMMetric
 
 __all__ = [
     'BaseMetric', 'VisionToTextBaseMetric',
     'BLEUMetric', 'BLEURT20Metric', 'BERTScoreMetric', 'chrFMetric',
     'YiSiMetric', 'COMETMetric', 'MetricXMetric', 'GEMBA_MQM_Metric',
     'ClipScoreMetric', 'ROUGEMetric', 'ROUGEWEMetric',
-    'METEORMetric', 'SummaQAMetric', 'BARTScoreMetric', 'ArmoRMMetric'
+    'METEORMetric', 'SummaQAMetric', 'BARTScoreMetric'
 ]
