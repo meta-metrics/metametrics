@@ -162,9 +162,9 @@ cython_debug/
 #.idea/
 
 # Submodules
-GEMBA/
-bleurt/
-BARTScore/
+# GEMBA/
+# bleurt/
+# BARTScore/
 ROUGE-1.5.5/
 mt-metrics-eval/
 embeddings/
