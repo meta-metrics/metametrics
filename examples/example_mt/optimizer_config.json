@@ -1,0 +1,6 @@
+{
+    "optimizer_name": "gp",
+    "optimizer_args": {
+        "objective_fn": "kendall"
+    }
+}

@@ -14,7 +14,7 @@ from metametrics.utils.constants import TEXT_HYP, TEXT_REF, TEXT_SRC, IMG_SRC
 
 logger = get_logger(__name__)
 
-class MetaMetricsText(MetaMetrics):
+class MetaMetricsVision(MetaMetrics):
     def __init__(self):
         self.metric_list = []
         self.optimizer = None

@@ -7,8 +7,6 @@ from metametrics.metrics.chrf_metric import chrFMetric
 from metametrics.metrics.yisi_metric import YiSiMetric
 from metametrics.metrics.comet_metric import COMETMetric
 from metametrics.metrics.metricx_metric import MetricXMetric
-from metametrics.metrics.gemba_metric import GEMBA_MQM_Metric
-from metametrics.metrics.clip_score_metric import ClipScoreMetric
 from metametrics.metrics.rouge_metric import ROUGEMetric
 from metametrics.metrics.rouge_we_metric import ROUGEWEMetric
 from metametrics.metrics.meteor_metric import METEORMetric
@@ -18,7 +16,22 @@ from metametrics.metrics.bart_score_metric import BARTScoreMetric
 __all__ = [
     'BaseMetric', 'VisionToTextBaseMetric',
     'BLEUMetric', 'BLEURT20Metric', 'BERTScoreMetric', 'chrFMetric',
-    'YiSiMetric', 'COMETMetric', 'MetricXMetric', 'GEMBA_MQM_Metric',
-    'ClipScoreMetric', 'ROUGEMetric', 'ROUGEWEMetric',
+    'YiSiMetric', 'COMETMetric', 'MetricXMetric',
+    'ROUGEMetric', 'ROUGEWEMetric',
     'METEORMetric', 'SummaQAMetric', 'BARTScoreMetric'
 ]
+
+try:
+    from metametrics.metrics.gemba_metric import GEMBA_MQM_Metric
+    __all__.append('GEMBA_MQM_Metric')
+except ImportError:
+    # GEMBA_MQM_Metric not available, skipping import
+    pass
+
+
+try:
+    from metametrics.metrics.clip_score_metric import ClipScoreMetric
+    __all__.append('ClipScoreMetric')
+except ImportError:
+    # ClipScoreMetric not available, skipping import
+    pass

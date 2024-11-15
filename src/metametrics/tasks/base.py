@@ -20,9 +20,21 @@ class MetricManager:
         "rougewe": ROUGEWEMetric,
         "summaqa": SummaQAMetric,
         "yisi": YiSiMetric,
-        "gemba_mqm": GEMBA_MQM_Metric,
-        "clipscore": ClipScoreMetric,
     }
+    
+    # Attempt to import GEMBA_MQM_Metric
+    try:
+        from metametrics.metrics.gemba_metric import GEMBA_MQM_Metric
+        _registered_metrics["gemba_mqm"] = GEMBA_MQM_Metric
+    except ImportError:
+        pass
+
+    # Attempt to import ClipScoreMetric
+    try:
+        from metametrics.metrics.clip_score_metric import ClipScoreMetric
+        _registered_metrics["clipscore"] = ClipScoreMetric
+    except ImportError:
+        pass
 
     def __init__(self):
         self.list_metrics = []
@@ -66,8 +78,14 @@ class MetricManager:
 class MetaMetrics(ABC):
     _registered_optimizers = {
         "gp": GaussianProcessOptimizer,
-        "xgb": XGBoostOptimizer,
     }
+    
+    # Attempt to import XGBoostOptimizer
+    try:
+        from metametrics.optimizer.xgb import XGBoostOptimizer
+        _registered_optimizers["xgb"] = XGBoostOptimizer
+    except ImportError:
+        pass
 
     @abstractmethod
     def add_metric(self, metric_name, **metric_args):
@@ -79,14 +97,14 @@ class MetaMetrics(ABC):
         """Registers a new optimizer in the _registered_optimizers."""
         if not issubclass(optimizer_class, BaseOptimizer):  # Ensure it inherits from BaseOptimizer or a similar base class
             raise TypeError(f"Optimizer class `{optimizer_class}` must inherit from BaseOptimizer")
-        self._registered_metrics[optimizer_name] = optimizer_class
+        self._registered_optimizers[optimizer_name] = optimizer_class
 
     def get_optimizer(self, optimizer_name, optimizer_args):
         """Gets optimizer from the _registered_optimizers."""
         optimizer_class = self._registered_optimizers.get(optimizer_name)
         if optimizer_class is None:
             raise ValueError(f"Optimizer name '{optimizer_name}' is not recognized!")
-        return optimizer_class(**optimizer_args)
+        return optimizer_class.init_from_config_dict(config_dict=optimizer_args)
     
     @abstractmethod
     def set_optimizer(self, optimizer_name, optimizer_args):
@@ -94,15 +112,14 @@ class MetaMetrics(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def evaluate_metrics(self, dataset, **kwargs):
+    def evaluate_metrics(self, metrics_df):
         raise NotImplementedError()
     
     @abstractmethod
-    def optimize(self):
+    def calibrate(self, metrics_df, target_scores):
         raise NotImplementedError()
     
     @abstractmethod
-    def evaluate_metametrics(self):
+    def evaluate_metametrics(self, metrics_df, target_scores):
         raise NotImplementedError()
-
     

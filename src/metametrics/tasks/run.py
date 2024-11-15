@@ -26,16 +26,8 @@ class MainArguments:
     modality: str = field(
         metadata={"help": "The modality used for MetaMetrics."},
     )
-    normalize_metrics: bool = field(
-        default=True,
-        metadata={"help": "Normalize metrics used for MetaMetrics."},
-    )
     output_dir: str = field(
         metadata={"help": "The output directory of the experiments."},
-    )
-    overwrite_output_dir: bool = field(
-        default=True,
-        metadata={"help": "Whether to overwrite the directory of the experiments."},
     )
     optimizer_config_path: str = field(
         metadata={"help": "YAML/JSON file that contains optimizer config to be used for MetaMetrics."},
@@ -47,10 +39,24 @@ class MainArguments:
         metadata={"help": "YAML/JSON file that contains dataset config to be used for MetaMetrics."},
     )
     hf_hub_token: Optional[str] = field(
+        default=None,
         metadata={"help": "HuggingFace token to access datasets (and potentially models)."},
     )
     cache_dir: Optional[str] = field(
+        default=None,
         metadata={"help": "Cache directory for the datasets and models."}
+    )
+    normalize_metrics: bool = field(
+        default=True,
+        metadata={"help": "Normalize metrics used for MetaMetrics."},
+    )
+    overwrite_output_dir: bool = field(
+        default=True,
+        metadata={"help": "Whether to overwrite the directory of the experiments."},
+    )
+    overwrite_cache: bool = field(
+        default=False,
+        metadata={"help": "Whether to overwrite the cache directory of the experiments."},
     )
     
     def __post_init__(self):
@@ -67,10 +73,10 @@ def get_main_args(args: Optional[Dict[str, Any]] = None) -> MainArguments:
         return parser.parse_dict(args)
 
     if len(sys.argv) == 2 and (sys.argv[1].endswith(".yaml") or sys.argv[1].endswith(".yml")):
-        return parser.parse_yaml_file(os.path.abspath(sys.argv[1]))
+        return parser.parse_yaml_file(os.path.abspath(sys.argv[1]))[0]
 
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        return parser.parse_json_file(os.path.abspath(sys.argv[1]))
+        return parser.parse_json_file(os.path.abspath(sys.argv[1]))[0]
 
     parsed_args, unknown_args = parser.parse_args_into_dataclasses(return_remaining_strings=True)
 
@@ -184,7 +190,7 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
     train_scores_df.to_csv(train_scores_path, index=False)
 
     # Calibrate
-    task_pipeline.calibrate(train_scores_df, dataset_dict["train"]["target_scores"])
+    task_pipeline.calibrate(train_scores_df, dataset_dict["train"][consts.TARGET])
     
     # Evaluate task
     eval_metric_scores = task_pipeline.evaluate_metrics(dataset_dict["validation"], normalize_metrics)
@@ -207,11 +213,11 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
     eval_scores_path = os.path.join(output_dir, "eval_scores.csv")
     eval_scores_df.to_csv(eval_scores_path, index=False)
     
-    pred, result = task_pipeline.evaluate_metametrics(eval_scores_df, dataset_dict["validation"]["target_scores"])
+    pred, result = task_pipeline.evaluate_metametrics(eval_scores_df, dataset_dict["validation"][consts.TARGET])
     
     # Save predictions
     pred_df = pd.DataFrame(pred, columns=["predictions"])
-    human_scores_df = pd.DataFrame(dataset_dict["validation"]["target_scores"])
+    human_scores_df = pd.DataFrame(dataset_dict["validation"][consts.TARGET])
     pred_df = pd.concat([pred_df, human_scores_df], axis=1)
     pred_path = os.path.join(output_dir, "pred_human_scores.csv")
     pred_df.to_csv(pred_path, index=False)

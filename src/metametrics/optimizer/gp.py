@@ -5,6 +5,8 @@ import numpy as np
 from dataclasses import dataclass, field
 from transformers import HfArgumentParser
 
+from typing import Optional
+
 from metametrics.optimizer.base_optimizer import BaseOptimizer, OBJECTIVE_FN_MAP
 from metametrics.utils.logging import get_logger
 from metametrics.utils.constants import MODEL_RANDOM_SEED
@@ -44,20 +46,12 @@ class GaussianProcessOptimizer(BaseOptimizer):
         self.seed = args.seed
         self.need_calibrate = True
         self.optimizer = {}
-        
-    def init_from_config_file(self, config_file_path: str):
+    
+    @classmethod
+    def init_from_config_dict(self, config_dict):
         parser = HfArgumentParser(GaussianProcessArguments)
-
-        parsed_args = None
-        if config_file_path.endswith(".yaml") or config_file_path.endswith(".yml"):
-            parsed_args = parser.parse_yaml_file(os.path.abspath(config_file_path))
-        elif config_file_path.endswith(".json"):
-            parsed_args = parser.parse_json_file(os.path.abspath(config_file_path))
-        else:
-            logger.error("Got invalid dataset config path: {}".format(config_file_path))
-            raise ValueError("dataset config path should be either JSON or YAML but got {} instead".format(config_file_path))
-        
-        self.__init__(parsed_args)
+        parsed_args = parser.parse_dict(config_dict)[0]
+        return self(parsed_args)
 
     def black_box_function(self, metric_array, target_scores, metric_weights):
         """Calculate the objective function score."""
