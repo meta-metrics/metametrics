@@ -22,6 +22,7 @@ TEXT_REF = "text_ref"
 IMG_SRC = "img_src"
 CHOSEN = "chosen"
 REJECTED = "rejected"
+TARGET = "target_score"
 
 HF_TOKEN = os.getenv("HF_TOKEN")
 CACHE_DIR = None

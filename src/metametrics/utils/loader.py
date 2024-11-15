@@ -8,15 +8,10 @@ from transformers import HfArgumentParser
 from metametrics.utils.logging import get_logger
 from metametrics.utils.constants import (
     DATASET_RANDOM_SEED, FILEEXT2TYPE, CACHE_DIR, HF_TOKEN,
-    TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, CHOSEN, REJECTED
+    TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, CHOSEN, REJECTED, TARGET
 )
 
 logger = get_logger(__name__)
-
-import json
-import os
-from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional
 
 @dataclass
 class DatasetAttr:
@@ -30,7 +25,6 @@ class DatasetAttr:
     subset: Optional[str] = None
     split: str = "train"
     folder: Optional[str] = None
-    num_samples: Optional[int] = None
     # text columns
     text_src: Optional[str] = TEXT_SRC
     text_hyp: Optional[str] = TEXT_HYP
@@ -40,6 +34,8 @@ class DatasetAttr:
     # reward columns
     chosen: Optional[str] = CHOSEN
     rejected: Optional[str] = REJECTED
+    # target columns
+    target: Optional[str] = TARGET
 
     def __repr__(self) -> str:
         return self.dataset_name
@@ -101,15 +97,14 @@ def get_dataset_list(raw_dataset_attr_dict: Optional[Dict[str, Any]]) -> List[Da
             dataset_attr = DatasetAttr("file", dataset_name=raw_data_attr["file_name"])
 
         # Set basic attributes of the dataset
-        dataset_attr.set_attr("subset", raw_data_attr.get("subset"))
-        dataset_attr.set_attr("split", raw_data_attr.get("split", "train"))
-        dataset_attr.set_attr("folder", raw_data_attr.get("folder"))
-        dataset_attr.set_attr("num_samples", raw_data_attr.get("num_samples"))
+        dataset_attr.set_attr("subset", raw_data_attr)
+        dataset_attr.set_attr("split", raw_data_attr, "train")
+        dataset_attr.set_attr("folder", raw_data_attr)
         
         # Set the colum names need to be retrieved
-        column_names = [TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, CHOSEN, REJECTED]
+        column_names = [TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, CHOSEN, REJECTED, TARGET]
         for col in column_names:
-            dataset_attr.set_attr(col, raw_data_attr.get(col))
+            dataset_attr.set_attr(col, raw_data_attr)
 
         dataset_list.append(dataset_attr)
 
@@ -165,6 +160,7 @@ def _load_single_dataset(dataset_attr: DatasetAttr, data_args: DataArguments) ->
         IMG_SRC: getattr(dataset_attr, IMG_SRC, None),
         CHOSEN: getattr(dataset_attr, CHOSEN, None),
         REJECTED: getattr(dataset_attr, REJECTED, None),
+        TARGET: getattr(dataset_attr, TARGET, None),
     }
 
     # Rename columns in the dataset to conform to default names
@@ -175,17 +171,6 @@ def _load_single_dataset(dataset_attr: DatasetAttr, data_args: DataArguments) ->
     # Retain only the specified columns
     column_names_to_keep = [col for col in default_columns.keys() if default_columns[col] is not None]
     dataset = dataset.remove_columns([col for col in dataset.column_names if col not in column_names_to_keep])
-
-    target_num = dataset_attr.num_samples
-    indexes = np.random.permutation(len(dataset))[:target_num]  # all samples should be included
-    target_num -= len(indexes)
-    if target_num > 0:
-        expand_indexes = np.random.choice(len(dataset), target_num)
-        indexes = np.concatenate((indexes, expand_indexes), axis=0)
-
-    assert len(indexes) == dataset_attr.num_samples, "Sample num mismatched."
-    dataset = dataset.select(indexes)
-    logger.info("Sampled {} examples from dataset {}.".format(dataset_attr.num_samples, dataset_attr))
 
     if data_args.max_samples is not None:  # truncate dataset
         max_samples = min(data_args.max_samples, len(dataset))
@@ -244,11 +229,11 @@ def get_dataset(data_args: DataArguments) -> DatasetDict:
 def preprocess_dataset_based_on_modality(dataset_dict: DatasetDict, data_args: DataArguments, modality: str):
     modality_columns = []
     if modality == "text":
-        modality_columns = [TEXT_SRC, TEXT_HYP, TEXT_REF]
+        modality_columns = [TEXT_SRC, TEXT_HYP, TEXT_REF, TARGET]
     elif modality == "vision":
-        modality_columns = [IMG_SRC, TEXT_SRC, TEXT_HYP, TEXT_REF]
+        modality_columns = [IMG_SRC, TEXT_SRC, TEXT_HYP, TEXT_REF, TARGET]
     elif modality == "reward":
-        modality_columns = [CHOSEN, REJECTED]
+        modality_columns = [CHOSEN, REJECTED, TARGET]
     else:
         raise NotImplementedError(f"Modality `{modality}` is not recognized!")
     
@@ -264,9 +249,9 @@ def parse_dataset_args(dataset_config_path: str, modality: str) -> DatasetDict:
     parser = HfArgumentParser(DataArguments)
 
     if dataset_config_path.endswith(".yaml") or dataset_config_path.endswith(".yml"):
-        parsed_data_args = parser.parse_yaml_file(os.path.abspath(dataset_config_path))
+        parsed_data_args = parser.parse_yaml_file(os.path.abspath(dataset_config_path))[0]
     elif dataset_config_path.endswith(".json"):
-        parsed_data_args = parser.parse_json_file(os.path.abspath(dataset_config_path))
+        parsed_data_args = parser.parse_json_file(os.path.abspath(dataset_config_path))[0]
     else:
         logger.error("Got invalid dataset config path: {}".format(dataset_config_path))
         raise ValueError("dataset config path should be either JSON or YAML but got {} instead".format(dataset_config_path))

@@ -1,0 +1,12 @@
+[
+    {
+        "metric_name": "bleu",
+        "metric_args": {}
+    },
+    {
+        "metric_name": "bleurt",
+        "metric_args": {
+            "agg_method": "max"
+        }
+    }
+]

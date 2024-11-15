@@ -1,58 +1,22 @@
 import pandas as pd
 import argparse
 import os
-
 import json
 import logging
-
-import os
-import pandas as pd
-
 
 logging.basicConfig(level=logging.INFO)
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 INDEXING_CSV_PATH = os.path.join(CUR_DIR, "saved_results", "rb_indexing.csv")
+EXAMPLE_MODEL_JSON = os.path.join(CUR_DIR, "saved_results", "example_models.json")
+EXAMPLE_WEIGHT_JSON = os.path.join(CUR_DIR, "saved_results", "example_weights.json")
 DEFAULT_DATASET = 'allenai/reward-bench'
 
 SAVED_WEIGHTS = {'GRM-Gemma-2B-rewardmodel-ft_all': 0.1144232211410179,
-            'GRM-Llama3-8B-rewardmodel-ft_all': 0.21877515451343996,
-            'Skywork-Reward-Llama-3.1-8B_all': 1.0,
-            'internlm2-1_8b-reward_all': 0.22148920242377254,
-            'internlm2-7b-reward_all': 0.5482172828914557}
-
-EXAMPLE_MODEL_DICT = {
-    'GRM-Gemma-2B-rewardmodel-ft_all': {
-        'model_name': 'Ray2333/GRM-Gemma-2B-rewardmodel-ft',
-        'output_dir': 'outputs_reward-bench/Ray2333/GRM-Gemma-2B-rewardmodel-ft',
-        'json_path': 'outputs_reward-bench/Ray2333/GRM-Gemma-2B-rewardmodel-ftRay2333/GRM-Gemma-2B-rewardmodel-ft_all.jsonl',
-        'batch_size': 2
-    },
-    'GRM-Llama3-8B-rewardmodel-ft_all': {
-        'model_name':  'Ray2333/GRM-Llama3-8B-rewardmodel-ft',
-        'output_dir': 'outputs_reward-bench/Ray2333/GRM-Llama3-8B-rewardmodel-ft',
-        'json_path': 'outputs_reward-bench/Ray2333/GRM-Llama3-8B-rewardmodel-ftRay2333/GRM-Llama3-8B-rewardmodel-ft_all.jsonl',
-        'batch_size': 2
-    },
-    'Skywork-Reward-Llama-3.1-8B_all': {
-        'model_name': 'Skywork/Skywork-Reward-Llama-3.1-8B',
-        'output_dir': 'outputs_reward-bench/Skywork/Skywork-Reward-Llama-3.1-8B',
-        'json_path': 'outputs_reward-bench/Skywork/Skywork-Reward-Llama-3.1-8BSkywork/Skywork-Reward-Llama-3.1-8B_all.jsonl',
-        'batch_size': 2
-    },
-    'internlm2-1_8b-reward_all': {
-        'model_name': 'internlm/internlm2-1_8b-reward',
-        'output_dir': 'outputs_reward-bench/internlm/internlm2-1_8b-reward',
-        'json_path': 'outputs_reward-bench/internlm/internlm2-1_8b-rewardinternlm/internlm2-1_8b-reward_all.jsonl',
-        'batch_size': 2
-    },
-    'internlm2-7b-reward_all': {
-        'model_name': 'internlm/internlm2-7b-reward',
-        'output_dir': 'outputs_reward-bench/internlm/internlm2-7b-reward',
-        'json_path': 'outputs_reward-bench/internlm/internlm2-7b-rewardinternlm/internlm2-7b-reward_all.jsonl',
-        'batch_size': 2
-    },
-}
+                'GRM-Llama3-8B-rewardmodel-ft_all': 0.21877515451343996,
+                'Skywork-Reward-Llama-3.1-8B_all': 1.0,
+                'internlm2-1_8b-reward_all': 0.22148920242377254,
+                'internlm2-7b-reward_all': 0.5482172828914557}
 
 SUBSET_MAPPING = {
     "Chat": [
@@ -173,6 +137,7 @@ def ranking_acc(y_test, y_pred):
     correct_count = 0
     total_pairs = 0
     result_subset = {}
+    result_big_subset = {}
     copy_counter = EXAMPLE_TRACKER.copy()
     
     indexing = pd.read_csv(INDEXING_CSV_PATH)['subset'].to_list()
@@ -186,20 +151,29 @@ def ranking_acc(y_test, y_pred):
             is_correct = True
         
         sub_name = indexing[j]
+
         bigger_subset = None
         for k, v in SUBSET_MAPPING.items():
             if sub_name in v:
                 bigger_subset = k
         
         assert(bigger_subset is not None)
+
         copy_counter[sub_name] += 1
 
-        if bigger_subset not in result_subset:
+        if sub_name not in result_subset:
             # Correct, count
-            result_subset[bigger_subset] = [1 if is_correct else 0, 1]
+            result_subset[sub_name] = [1 if is_correct else 0, 1]
         else:
-            result_subset[bigger_subset][1] += 1
-            result_subset[bigger_subset][0] += (1 if is_correct else 0)
+            result_subset[sub_name][1] += 1
+            result_subset[sub_name][0] += (1 if is_correct else 0)
+            
+        if bigger_subset not in result_big_subset:
+            # Correct, count
+            result_big_subset[bigger_subset] = [1 if is_correct else 0, 1]
+        else:
+            result_big_subset[bigger_subset][1] += 1
+            result_big_subset[bigger_subset][0] += (1 if is_correct else 0)
             
         correct_count += (1 if is_correct else 0)
         
@@ -209,22 +183,32 @@ def ranking_acc(y_test, y_pred):
 
     # Calculate the accuracy
     accuracy = correct_count / total_pairs
+    submission_json = {}
     
     logging.info(f"======== RESULT ========")
     logging.info(f"Overall accuracy: {accuracy * 100:.3f}")
     for key, value in result_subset.items():
         logging.info(f"For {key}: {value[0] / value[1] * 100:.3f}")
+        submission_json[key] = value[0] / value[1]
     logging.info(f"=======================")
+    
+    submission_json['model'] = "meta-metrics/MetaMetrics-RM-v1.0"
+    submission_json['model_type'] = "Custom Classifier"
+    
+    with open(os.path.join(CUR_DIR, "saved_results", "submission.json"), "w") as f:
+        json.dump(submission_json, f, indent=4)
     
     return accuracy, result_subset
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--quick', default=True, action=argparse.BooleanOptionalAction, help="Quick reproduce, using saved result")
+    parser.add_argument('--reproduce', default=True, action=argparse.BooleanOptionalAction, help="Reproduce benchmark existing saved result")
+    parser.add_argument('--weight_json_path', required=False, default=EXAMPLE_WEIGHT_JSON, type=str, help="JSON path for the weights")
+    parser.add_argument('--models_json_path', required=False, default=EXAMPLE_MODEL_JSON, type=str, help="JSON path for the models used")
     args = parser.parse_args()
     
     # Run all models
-    if args.quick:
+    if args.reproduce:
         # Gather into pandas dataset
         test_df = pd.read_csv(os.path.join(CUR_DIR, "saved_results", "reward_bench_scores_with_prediction.tsv"), sep='\t')
         
@@ -232,21 +216,25 @@ if __name__ == '__main__':
         y_pred = test_df.apply(lambda row: sum(row[col] * SAVED_WEIGHTS.get(col, 0) for col in SAVED_WEIGHTS.keys()), axis=1)
         test_df['pred'] = y_pred
     else:
-        from metametrics.tasks.rewardbench import RewardBenchTask
+        from src.tasks.rewardbench import RewardBenchTask
         
         reward_bench_task = RewardBenchTask(need_calibrate=False)
         
-        for key, value in EXAMPLE_MODEL_DICT.items():
+        with open(args.weights_json_path, 'r') as wf, open(args.models_json_path, 'r') as mf:
+            weights_dict = json.load(wf)
+            models_dict = json.load(mf)
+        
+        for key, value in models_dict.items():
             reward_bench_task.add_metric(value)
             
         reward_bench_task.evaluate_metrics(DEFAULT_DATASET)
         
         # Gather into pandas dataset
-        json_paths = [EXAMPLE_MODEL_DICT[metric_name]['json_path'] for metric_name in EXAMPLE_MODEL_DICT.keys()]
-        test_df = aggregate_results(EXAMPLE_MODEL_DICT.keys(), json_paths)
+        json_paths = [models_dict[metric_name]['json_path'] for metric_name in models_dict.keys()]
+        test_df = aggregate_results(models_dict.keys(), json_paths)
         
         # Evaluate
-        y_pred = test_df.apply(lambda row: sum(row[col] * SAVED_WEIGHTS.get(col, 0) for col in SAVED_WEIGHTS.keys()), axis=1)
+        y_pred = test_df.apply(lambda row: sum(row[col] * weights_dict.get(col, 0) for col in weights_dict.keys()), axis=1)
         test_df['pred'] = y_pred
 
     ranking_acc(test_df['ref'].to_list(), y_pred.tolist())

@@ -18,7 +18,7 @@ extras_require = {
     
     # Metrics
     "gemba": ["openai>=1.0.0", "openai-clip", "termcolor", "pexpect", "ipdb",
-               "absl-py", "six"],
+               "absl-py", "six", "ipdb"],
     
     # Regressor
     "xgboost": ["xgboost>=2.1.1", "scikit-optimize"],
@@ -30,7 +30,7 @@ extras_require = {
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
     
-def get_console_scripts() -> List[str]:
+def get_console_scripts():
     console_scripts = ["metametrics-cli = metametrics.cli:main"]
     if os.environ.get("ENABLE_SHORT_CONSOLE", "1").lower() in ["true", "1"]:
         console_scripts.append("mm = metametrics.cli:main")
@@ -54,7 +54,7 @@ class CustomInstall(install):
         self.install_metric_bleurt()
         self.install_metric_rouge()
         self.install_metric_meteor()
-        self.install_spacy()
+        # self.install_spacy()
     
     @staticmethod
     def install_metric_bleurt():   
@@ -89,9 +89,6 @@ class CustomInstall(install):
         os.environ["ROUGE_HOME"] = os.path.join(metrics_dir, "ROUGE-1.5.5")
         os.environ["LC_ALL"] = "C.UTF-8"
         os.environ["LANG"] = "C.UTF-8"
-
-        # Setup for ROUGE
-        os.system("pip install git+https://github.com/bheinzerling/pyrouge.git")
         
         # Remove current ROUGE if exists and reinstall
         os.system("rm -rf ROUGE-1.5.5")
@@ -166,11 +163,14 @@ setup(
         "evaluate>=0.4.2",
         "sentencepiece",
         "nltk>=3.8.1",
-        "dill==0.3.1.1", # for apache-beam
+        "dill>=0.3.8", # for apache-beam
+        "multiprocess>=0.70.16",
         "regex",
         "gdown",
         "PyYAML",
-        "tqdm"
+        "psutil",
+        "tqdm",
+        "pyrouge @ git+https://github.com/bheinzerling/pyrouge.git"
     ],
     package_dir={"": "src"},
     entry_points={"console_scripts": get_console_scripts()},

@@ -1,0 +1,32 @@
+{
+    "GRM-Gemma-2B-rewardmodel-ft_all": {
+        "model_name": "Ray2333/GRM-Gemma-2B-rewardmodel-ft",
+        "output_dir": "outputs_reward-bench/Ray2333/GRM-Gemma-2B-rewardmodel-ft",
+        "json_path": "outputs_reward-bench/Ray2333/GRM-Gemma-2B-rewardmodel-ftRay2333/GRM-Gemma-2B-rewardmodel-ft_all.jsonl",
+        "batch_size": 2
+    },
+    "GRM-Llama3-8B-rewardmodel-ft_all": {
+        "model_name":  "Ray2333/GRM-Llama3-8B-rewardmodel-ft",
+        "output_dir": "outputs_reward-bench/Ray2333/GRM-Llama3-8B-rewardmodel-ft",
+        "json_path": "outputs_reward-bench/Ray2333/GRM-Llama3-8B-rewardmodel-ftRay2333/GRM-Llama3-8B-rewardmodel-ft_all.jsonl",
+        "batch_size": 2
+    },
+    "Skywork-Reward-Llama-3.1-8B_all": {
+        "model_name": "Skywork/Skywork-Reward-Llama-3.1-8B",
+        "output_dir": "outputs_reward-bench/Skywork/Skywork-Reward-Llama-3.1-8B",
+        "json_path": "outputs_reward-bench/Skywork/Skywork-Reward-Llama-3.1-8BSkywork/Skywork-Reward-Llama-3.1-8B_all.jsonl",
+        "batch_size": 2
+    },
+    "internlm2-1_8b-reward_all": {
+        "model_name": "internlm/internlm2-1_8b-reward",
+        "output_dir": "outputs_reward-bench/internlm/internlm2-1_8b-reward",
+        "json_path": "outputs_reward-bench/internlm/internlm2-1_8b-rewardinternlm/internlm2-1_8b-reward_all.jsonl",
+        "batch_size": 2
+    },
+    "internlm2-7b-reward_all": {
+        "model_name": "internlm/internlm2-7b-reward",
+        "output_dir": "outputs_reward-bench/internlm/internlm2-7b-reward",
+        "json_path": "outputs_reward-bench/internlm/internlm2-7b-rewardinternlm/internlm2-7b-reward_all.jsonl",
+        "batch_size": 2
+    }
+}

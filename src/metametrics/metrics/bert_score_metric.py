@@ -17,7 +17,7 @@ class BERTScoreMetric(BaseMetric):
     def __init__(self, model_name: str, model_metric: str, num_layers: int=None,
                  batch_size: int=8, nthreads: int=16, rescale_with_baseline: bool=False, **kwargs):
         self.model_name = model_name
-        self.num_layers = validate_int(num_layers, valid_min=1)
+        self.num_layers = validate_int(num_layers, valid_min=1) if num_layers is not None else None
         self.batch_size = validate_int(batch_size, valid_min=1)
         self.nthreads = validate_int(nthreads, valid_min=1)
         self.rescale_with_baseline = validate_bool(rescale_with_baseline)

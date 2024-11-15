@@ -4,10 +4,11 @@ from abc import ABC, abstractmethod
 from scipy import stats
 
 class BaseOptimizer(ABC):
+    @classmethod
     @abstractmethod
-    def __init__(self, config_file):
+    def init_from_config_dict(self, config_dict):
         raise NotImplementedError()
-    
+
     @abstractmethod
     def calibrate(self, metrics_df, target_scores):
         raise NotImplementedError()
