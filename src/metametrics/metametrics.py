@@ -22,6 +22,7 @@ from metametrics.metrics import ROUGEWEMetric
 from metametrics.metrics import SummaQAMetric
 from metametrics.metrics import YiSiMetric
 from metametrics.metrics import GEMBA_MQM
+from metametrics.metrics import ArmoRMMetric
 
 from metametrics.metrics import ClipScoreMetric
 
@@ -53,6 +54,7 @@ class MetaMetrics:
             logging.info(f"[normalize metric]")
             self.normalization_config = {
                 # min, max, invert, clip
+                "armoRM": (0.0, 1.0, False, False),
                 "bertscore": (-1.0, 1.0, False, False),
                 "yisi": (0.0, 1.0, False, False),
                 "bleurt": (0.0, 1.0, False, True),
@@ -115,6 +117,8 @@ class MetaMetrics:
             metric = YiSiMetric(**metric_args)
         elif metric_name =="gemba_mqm":
             metric = GEMBA_MQM(**metric_args)
+        elif metric_name == "armoRM":
+            metric = ArmoRMMetric(**metric_args)
         elif metric_name == "clipscore":
             metric = ClipScoreMetric(**metric_args)
         return metric
