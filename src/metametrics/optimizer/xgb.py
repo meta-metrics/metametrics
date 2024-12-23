@@ -20,9 +20,6 @@ from metametrics.utils.constants import MODEL_RANDOM_SEED
 
 logger = get_logger(__name__)
 
-MAX_WORKERS = 16
-CUR_DIR = os.path.dirname(os.path.abspath(__file__))
-
 @dataclass
 class XGBArguments:
     r"""
@@ -231,7 +228,7 @@ class XGBoostOptimizer(BaseOptimizer):
         if self.select_k_features is not None:
             num_reduce_feats = max(1, len(metrics_df_copy.columns) - self.select_k_features)
 
-        for _ in range(num_reduce_feats):
+        for i in range(num_reduce_feats):
             self.hpm_optimizer_fn(metrics_df_copy, target_scores)
             
             performance_history.append(self.objective_fn(self.optimizer.predict(metrics_df), target_scores))
@@ -255,7 +252,8 @@ class XGBoostOptimizer(BaseOptimizer):
             least_important_feature = importance_df.iloc[-1]['feature']  # Get the least important feature
             metrics_df_copy = metrics_df_copy.drop(columns=[least_important_feature])
             
-            logger.info(f"Dropping feature: {least_important_feature}. Number of features reduced to {len(metrics_df_copy.columns)}.\n")
+            if i < num_reduce_feats - 1:
+                logger.info(f"Dropping feature: {least_important_feature}. Number of features reduced to {len(metrics_df_copy.columns)}.\n")
 
         # Get the best model from the iterative process
         best_index = np.argmax(performance_history)

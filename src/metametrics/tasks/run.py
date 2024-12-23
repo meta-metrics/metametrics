@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 import json
 import yaml
@@ -13,7 +14,7 @@ from metametrics.tasks.vision import MetaMetricsVision
 from metametrics.tasks.reward import MetaMetricsReward
 
 from metametrics.utils.logging import get_logger
-from metametrics.utils.loader import parse_dataset_args
+from metametrics.utils.loader import parse_dataset_args, resolve_path
 import metametrics.utils.constants as consts
 
 logger = get_logger(__name__)
@@ -73,10 +74,10 @@ def get_main_args(args: Optional[Dict[str, Any]] = None) -> MainArguments:
         return parser.parse_dict(args)
 
     if len(sys.argv) == 2 and (sys.argv[1].endswith(".yaml") or sys.argv[1].endswith(".yml")):
-        return parser.parse_yaml_file(os.path.abspath(sys.argv[1]))[0]
+        return parser.parse_yaml_file(resolve_path(sys.argv[1]))[0]
 
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        return parser.parse_json_file(os.path.abspath(sys.argv[1]))[0]
+        return parser.parse_json_file(resolve_path(sys.argv[1]))[0]
 
     parsed_args, unknown_args = parser.parse_args_into_dataclasses(return_remaining_strings=True)
 
@@ -90,7 +91,7 @@ def get_main_args(args: Optional[Dict[str, Any]] = None) -> MainArguments:
 def parse_optimizer(optimizer_config_path: str):
     if optimizer_config_path.endswith(".yaml") or optimizer_config_path.endswith(".yml"):
         try:
-            with open(os.path.abspath(optimizer_config_path), 'r') as f:
+            with open(resolve_path(optimizer_config_path), 'r') as f:
                 parsed_optimizer = yaml.safe_load(f)
                 return parsed_optimizer
         except yaml.YAMLError as e:
@@ -98,7 +99,7 @@ def parse_optimizer(optimizer_config_path: str):
             raise ValueError("Failed to parse YAML configuration file.") from e
     elif optimizer_config_path.endswith(".json"):
         try:
-            with open(os.path.abspath(optimizer_config_path), 'r') as f:
+            with open(resolve_path(optimizer_config_path), 'r') as f:
                 parsed_optimizer = json.load(f)
                 return parsed_optimizer
         except json.JSONDecodeError as e:
@@ -111,7 +112,7 @@ def parse_optimizer(optimizer_config_path: str):
 def parse_metrics_dict(metrics_config_path: str):
     if metrics_config_path.endswith(".yaml") or metrics_config_path.endswith(".yml"):
         try:
-            with open(os.path.abspath(metrics_config_path), 'r') as f:
+            with open(resolve_path(metrics_config_path), 'r') as f:
                 parsed_metrics = yaml.safe_load(f)
                 return parsed_metrics
         except yaml.YAMLError as e:
@@ -119,7 +120,7 @@ def parse_metrics_dict(metrics_config_path: str):
             raise ValueError("Failed to parse YAML configuration file.") from e
     elif metrics_config_path.endswith(".json"):
         try:
-            with open(os.path.abspath(metrics_config_path), 'r') as f:
+            with open(resolve_path(metrics_config_path), 'r') as f:
                 parsed_metrics = json.load(f)
                 return parsed_metrics
         except json.JSONDecodeError as e:
@@ -144,8 +145,21 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
     dataset_dict = parse_dataset_args(main_args.dataset_config_path, modality=main_args.modality)
     metrics_list = parse_metrics_dict(main_args.metrics_config_path)
     normalize_metrics = main_args.normalize_metrics
-    output_dir = os.path.abspath(main_args.output_dir)
+    output_dir = resolve_path(main_args.output_dir)
+    
+    # Save train dataset
+    os.makedirs(output_dir, exist_ok=True)
+    train_dataset_path = os.path.join(output_dir, "train_dataset.pkl")
+    with open(train_dataset_path, "wb") as f:
+        pickle.dump(dataset_dict["train"], f)
 
+    # Save eval/validation dataset (if it exists)
+    if "validation" in dataset_dict:
+        eval_dataset_path = os.path.join(output_dir, "eval_dataset.pkl")
+        with open(eval_dataset_path, "wb") as f:
+            pickle.dump(dataset_dict["validation"], f)
+
+    # Initialize pipeline
     if main_args.modality == "text":
         task_pipeline = MetaMetricsText()
     elif main_args.modality == "vision":
@@ -154,8 +168,7 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
         task_pipeline = MetaMetricsReward()
     else:
         raise NotImplementedError(f"Modality `{main_args.modality}` is not recognized!")
-    
-    
+
     # Add metrics
     for metric in metrics_list:
         task_pipeline.add_metric(metric.get("metric_name"), metric.get("metric_args"))
@@ -164,6 +177,7 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
     task_pipeline.set_optimizer(optimizer.get("optimizer_name"), optimizer.get("optimizer_args"))
     
     # Evaluate train metrics
+    logger.info("Evaluating metrics for train dataset!")
     train_metric_scores = task_pipeline.evaluate_metrics(dataset_dict["train"], normalize_metrics)
     
     # Create unique metric names for the DataFrame
@@ -172,11 +186,11 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
     
     for name, scores in zip([metric["metric_name"] for metric in metrics_list], train_metric_scores):
         # Create a unique name if duplicate
-        if unique_names[name] > 0:
+        if name in unique_names:
             unique_name = f"{name}_{unique_names[name]}"
         else:
             unique_name = name
-            unique_names[name] = 0
+            unique_names[name] = 1
 
         unique_names[name] += 1
         train_scores_dict[unique_name] = scores
@@ -190,41 +204,53 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
     train_scores_df.to_csv(train_scores_path, index=False)
 
     # Calibrate
-    task_pipeline.calibrate(train_scores_df, dataset_dict["train"][consts.TARGET])
+    task_pipeline.calibrate(train_scores_df, dataset_dict["train"][consts.TARGET_SCORE])
     
     # Evaluate task
-    eval_metric_scores = task_pipeline.evaluate_metrics(dataset_dict["validation"], normalize_metrics)
+    if "validation" in dataset_dict:
+        logger.info("Evaluating metrics for validation dataset!")
+        eval_metric_scores = task_pipeline.evaluate_metrics(dataset_dict["validation"], normalize_metrics)
+        
+        # Repeat the process for validation scores with unique names
+        eval_scores_dict = {}
+        unique_names.clear()  # Reset the counter for validation
+        for name, scores in zip([m["metric_name"] for m in metrics_list], eval_metric_scores):
+            if name in unique_names:
+                unique_name = f"{name}_{unique_names[name]}"
+            else:
+                unique_name = name
+                unique_names[name] = 1
+                
+            unique_names[name] += 1
+            eval_scores_dict[unique_name] = scores
+        
+        eval_scores_df = pd.DataFrame(eval_scores_dict)
+        
+        # Save train_scores_df
+        os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
+        eval_scores_path = os.path.join(output_dir, "eval_scores.csv")
+        eval_scores_df.to_csv(eval_scores_path, index=False)
+        
+        pred, result = task_pipeline.evaluate_metametrics(eval_scores_df, dataset_dict["validation"][consts.TARGET_SCORE])
     
-    # Repeat the process for validation scores with unique names
-    eval_scores_dict = {}
-    unique_names.clear()  # Reset the counter for validation
-    for name, scores in zip([m["metric_name"] for m in metrics_list], eval_metric_scores):
-        if unique_names[name] > 0:
-            unique_name = f"{name}_{unique_names[name]}"
-        else:
-            unique_name = name
-        unique_names[name] += 1
-        eval_scores_dict[unique_name] = scores
-    
-    eval_scores_df = pd.DataFrame(eval_scores_dict)
-    
-    # Save train_scores_df
-    os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
-    eval_scores_path = os.path.join(output_dir, "eval_scores.csv")
-    eval_scores_df.to_csv(eval_scores_path, index=False)
-    
-    pred, result = task_pipeline.evaluate_metametrics(eval_scores_df, dataset_dict["validation"][consts.TARGET])
-    
-    # Save predictions
-    pred_df = pd.DataFrame(pred, columns=["predictions"])
-    human_scores_df = pd.DataFrame(dataset_dict["validation"][consts.TARGET])
-    pred_df = pd.concat([pred_df, human_scores_df], axis=1)
-    pred_path = os.path.join(output_dir, "pred_human_scores.csv")
-    pred_df.to_csv(pred_path, index=False)
+        # Save predictions
+        pred_df = pd.DataFrame(pred, columns=["predictions"])
+        human_scores_df = pd.DataFrame(dataset_dict["validation"][consts.TARGET_SCORE], columns=["true_scores"])
+        pred_df = pd.concat([pred_df, human_scores_df], axis=1)
+        pred_path = os.path.join(output_dir, "pred_human_scores.csv")
+        pred_df.to_csv(pred_path, index=False)
 
-    # Save results
-    result_path = os.path.join(output_dir, "result.csv")
-    if isinstance(result, dict):
-        pd.DataFrame([result]).to_csv(result_path, index=False)
-    else:
-        pd.DataFrame(result).to_csv(result_path, index=False)
+        # Save results
+        result_path = os.path.join(output_dir, "result.csv")
+        if isinstance(result, dict):
+            # Single dictionary
+            pd.DataFrame([result]).to_csv(result_path, index=False)
+        elif isinstance(result, list):
+            # List of dictionaries or simple values
+            if all(isinstance(r, dict) for r in result):
+                pd.DataFrame(result).to_csv(result_path, index=False)
+            else:
+                pd.DataFrame(result, columns=["result"]).to_csv(result_path, index=False)
+        else:
+            # Any other structure
+            pd.DataFrame([result], columns=["result"]).to_csv(result_path, index=False)

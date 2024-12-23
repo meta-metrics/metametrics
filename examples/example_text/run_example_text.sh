@@ -1,3 +1,3 @@
 #!/bin/bash
 
-metametrics-cli run summ_xgb_metrics.yaml
+metametrics-cli examples/example_text/summ_xgb_metrics.yaml

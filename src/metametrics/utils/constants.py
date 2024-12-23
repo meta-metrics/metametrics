@@ -1,4 +1,3 @@
-import numpy as np
 import os
 
 VERSION = "0.0.1"
@@ -22,7 +21,8 @@ TEXT_REF = "text_ref"
 IMG_SRC = "img_src"
 CHOSEN = "chosen"
 REJECTED = "rejected"
-TARGET = "target_score"
+TARGET_SCORE = "target_score"
 
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 HF_TOKEN = os.getenv("HF_TOKEN")
 CACHE_DIR = None

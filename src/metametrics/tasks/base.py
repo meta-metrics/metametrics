@@ -57,7 +57,7 @@ class MetricManager:
         return iter(self.list_metrics)
 
     def normalize_all_scores(self, list_of_scores: List[List[float]]) -> np.ndarray:
-        """Normalizes a list of lists of scores based on each metric's min, max, and greater_is_better values."""
+        """Normalizes a list of lists of scores based on each metric's min, max, and higher_is_better values."""
         if len(list_of_scores) != len(self.list_metrics):
             raise ValueError("The number of score lists must match the number of metrics in list_metrics.")
         
@@ -65,12 +65,12 @@ class MetricManager:
         for metric, scores in zip(self.list_metrics, list_of_scores):
             min_val = metric.min_val if metric.min_val is not None else np.min(scores)
             max_val = metric.max_val if metric.max_val is not None else np.max(scores)
-            greater_is_better = metric.greater_is_better
+            higher_is_better = metric.higher_is_better
 
             # Normalize the scores based on the metric's normalization parameters
             clipped_scores = np.clip(scores, min_val, max_val)
             norm_scores = (clipped_scores - min_val) / (max_val - min_val)
-            norm_scores = norm_scores if greater_is_better else 1 - norm_scores
+            norm_scores = norm_scores if higher_is_better else 1 - norm_scores
             normalized_scores.append(norm_scores)
         
         return normalized_scores

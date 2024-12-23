@@ -33,9 +33,15 @@ def reward_ranking_acc(y_test, y_pred):
     accuracy = correct_count / total_pairs
     return accuracy
 
+def kendall_tau(y_test, y_pred):
+    return stats.kendalltau(y_test, y_pred).statistic
+
+def pearson(y_test, y_pred):
+    return stats.pearsonr(y_test, y_pred).statistic
+
 OBJECTIVE_FN_MAP = {
-    "kendall": stats.kendalltau,
-    "pearson": stats.pearsonr,
+    "kendall": kendall_tau,
+    "pearson": pearson,
     "reward_ranking_acc": reward_ranking_acc,
 }
     
