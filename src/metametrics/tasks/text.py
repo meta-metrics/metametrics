@@ -32,7 +32,7 @@ class MetaMetricsText(MetaMetrics):
         references = dataset[TEXT_REF]
         sources = dataset[TEXT_SRC]
         
-        for metric in self.metrics_manager:               
+        for metric in self.metric_manager:               
             # Get the metric scores for each metric and convert it to a list if necessary
             metric_scores = list(np.array(metric.run_scoring(predictions, references, sources)))
             all_metric_scores.append(metric_scores)  # Append the metric scores to the list
@@ -43,7 +43,7 @@ class MetaMetricsText(MetaMetrics):
         return all_metric_scores
         
     def calibrate(self, metrics_df, target_scores):
-        self.optimizer.optimize(metrics_df, target_scores)
+        self.optimizer.calibrate(metrics_df, target_scores)
         self.need_calibrate = False
     
     def evaluate_metametrics(self, metrics_df, target_scores):

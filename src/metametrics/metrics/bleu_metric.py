@@ -34,7 +34,7 @@ class BLEUMetric(BaseMetric):
 
     @property
     def max_val(self) -> Optional[float]:
-        return 1.0
+        return 100.0
 
     @property
     def higher_is_better(self) -> bool:

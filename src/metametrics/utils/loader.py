@@ -7,8 +7,8 @@ from transformers import HfArgumentParser
 
 from metametrics.utils.logging import get_logger
 from metametrics.utils.constants import (
-    DATASET_RANDOM_SEED, FILEEXT2TYPE, CACHE_DIR, HF_TOKEN,
-    TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, CHOSEN, REJECTED, TARGET
+    DATASET_RANDOM_SEED, FILEEXT2TYPE, ROOT_DIR, CACHE_DIR, HF_TOKEN,
+    TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, CHOSEN, REJECTED, TARGET_SCORE
 )
 
 logger = get_logger(__name__)
@@ -35,7 +35,7 @@ class DatasetAttr:
     chosen: Optional[str] = CHOSEN
     rejected: Optional[str] = REJECTED
     # target columns
-    target: Optional[str] = TARGET
+    target_score: Optional[str] = TARGET_SCORE
 
     def __repr__(self) -> str:
         return self.dataset_name
@@ -84,6 +84,11 @@ class DataArguments:
         if self.eval_dataset is not None and self.val_size > 1e-6:
             raise ValueError("Cannot specify `val_size` if `eval_dataset` is not None.")
 
+def resolve_path(curr_path):
+    if not os.path.isabs(curr_path):
+        return os.path.abspath(os.path.join(ROOT_DIR, curr_path))
+    return curr_path
+
 def get_dataset_list(raw_dataset_attr_dict: Optional[Dict[str, Any]]) -> List[DatasetAttr]:
     r"""
     Gets the attributes of the datasets.
@@ -102,9 +107,9 @@ def get_dataset_list(raw_dataset_attr_dict: Optional[Dict[str, Any]]) -> List[Da
         dataset_attr.set_attr("folder", raw_data_attr)
         
         # Set the colum names need to be retrieved
-        column_names = [TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, CHOSEN, REJECTED, TARGET]
+        column_names = [TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, CHOSEN, REJECTED, TARGET_SCORE]
         for col in column_names:
-            dataset_attr.set_attr(col, raw_data_attr)
+            dataset_attr.set_attr(col, raw_data_attr.get('columns', {}))
 
         dataset_list.append(dataset_attr)
 
@@ -160,7 +165,7 @@ def _load_single_dataset(dataset_attr: DatasetAttr, data_args: DataArguments) ->
         IMG_SRC: getattr(dataset_attr, IMG_SRC, None),
         CHOSEN: getattr(dataset_attr, CHOSEN, None),
         REJECTED: getattr(dataset_attr, REJECTED, None),
-        TARGET: getattr(dataset_attr, TARGET, None),
+        TARGET_SCORE: getattr(dataset_attr, TARGET_SCORE, None),
     }
 
     # Rename columns in the dataset to conform to default names
@@ -229,11 +234,11 @@ def get_dataset(data_args: DataArguments) -> DatasetDict:
 def preprocess_dataset_based_on_modality(dataset_dict: DatasetDict, data_args: DataArguments, modality: str):
     modality_columns = []
     if modality == "text":
-        modality_columns = [TEXT_SRC, TEXT_HYP, TEXT_REF, TARGET]
+        modality_columns = [TEXT_SRC, TEXT_HYP, TEXT_REF, TARGET_SCORE]
     elif modality == "vision":
-        modality_columns = [IMG_SRC, TEXT_SRC, TEXT_HYP, TEXT_REF, TARGET]
+        modality_columns = [IMG_SRC, TEXT_SRC, TEXT_HYP, TEXT_REF, TARGET_SCORE]
     elif modality == "reward":
-        modality_columns = [CHOSEN, REJECTED, TARGET]
+        modality_columns = [CHOSEN, REJECTED, TARGET_SCORE]
     else:
         raise NotImplementedError(f"Modality `{modality}` is not recognized!")
     
@@ -249,9 +254,9 @@ def parse_dataset_args(dataset_config_path: str, modality: str) -> DatasetDict:
     parser = HfArgumentParser(DataArguments)
 
     if dataset_config_path.endswith(".yaml") or dataset_config_path.endswith(".yml"):
-        parsed_data_args = parser.parse_yaml_file(os.path.abspath(dataset_config_path))[0]
+        parsed_data_args = parser.parse_yaml_file(resolve_path(dataset_config_path))[0]
     elif dataset_config_path.endswith(".json"):
-        parsed_data_args = parser.parse_json_file(os.path.abspath(dataset_config_path))[0]
+        parsed_data_args = parser.parse_json_file(resolve_path(dataset_config_path))[0]
     else:
         logger.error("Got invalid dataset config path: {}".format(dataset_config_path))
         raise ValueError("dataset config path should be either JSON or YAML but got {} instead".format(dataset_config_path))
