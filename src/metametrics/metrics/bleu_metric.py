@@ -2,14 +2,14 @@ from typing import List, Union, Optional
 import sacrebleu
 import numpy as np
 
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-class BLEUMetric(BaseMetric):
+class BLEUMetric(TextBaseMetric):
     def __init__(self, smooth_method="exp", smooth_value=None,
                  use_effective_order=True, tokenize='13a',
                  lowercase=True, **kwargs):

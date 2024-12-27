@@ -35,7 +35,7 @@ class MetaMetricsVision(MetaMetrics):
         
         for metric in self.metric_manager:               
             # Get the metric scores for each metric and convert it to a list if necessary
-            if isinstance(metric, BaseMetric):
+            if isinstance(metric, TextBaseMetric):
                 metric_scores = list(np.array(metric.run_scoring(text_predictions, text_references, text_sources)))
             elif isinstance(metric, VisionToTextBaseMetric):
                 metric_scores = list(np.array(metric.run_scoring(image_sources, text_predictions,
@@ -52,12 +52,19 @@ class MetaMetricsVision(MetaMetrics):
         self.optimizer.calibrate(metrics_df, target_scores)
         self.need_calibrate = False
     
-    def evaluate_metametrics(self, metrics_df, target_scores):
+    def predict_metametrics(self, metrics_df):
+        if self.need_calibrate:
+            logger.error("Modification to MetaMetrics was made, calibration is needed before making prediction!")
+            raise RuntimeError()
+        else:
+            Y_pred = self.optimizer.predict(metrics_df)
+            return Y_pred
+    
+    def evaluate_metametrics(self, Y_pred, target_scores):
         if self.need_calibrate:
             logger.error("Modification to MetaMetrics was made, calibration is needed before evaluation!")
             raise RuntimeError()
         else:
-            Y_pred = self.optimizer.predict(metrics_df)
             result = self.optimizer.evaluate(Y_pred, target_scores)
-            return Y_pred, result    
+            return result    
 

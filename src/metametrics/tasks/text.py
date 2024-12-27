@@ -1,7 +1,5 @@
-from typing import List, Dict, Any
-from datasets import DatasetDict
+from typing import Dict, Any
 
-import os
 import pandas as pd
 import numpy as np
 
@@ -45,13 +43,20 @@ class MetaMetricsText(MetaMetrics):
     def calibrate(self, metrics_df, target_scores):
         self.optimizer.calibrate(metrics_df, target_scores)
         self.need_calibrate = False
+        
+    def predict_metametrics(self, metrics_df):
+        if self.need_calibrate:
+            logger.error("Modification to MetaMetrics was made, calibration is needed before making prediction!")
+            raise RuntimeError()
+        else:
+            Y_pred = self.optimizer.predict(metrics_df)
+            return Y_pred
     
-    def evaluate_metametrics(self, metrics_df, target_scores):
+    def evaluate_metametrics(self, Y_pred, target_scores):
         if self.need_calibrate:
             logger.error("Modification to MetaMetrics was made, calibration is needed before evaluation!")
             raise RuntimeError()
         else:
-            Y_pred = self.optimizer.predict(metrics_df)
             result = self.optimizer.evaluate(Y_pred, target_scores)
-            return Y_pred, result    
+            return result    
 

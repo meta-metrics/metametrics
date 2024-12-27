@@ -13,7 +13,7 @@ from torch import nn
 import transformers
 import transformers.modeling_outputs
 
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
@@ -191,7 +191,7 @@ class MT5ForRegression(MT5PreTrainedModel):
         predictions=predictions,
     )
 
-class MetricXMetric(BaseMetric):
+class MetricXMetric(TextBaseMetric):
     def __init__(self, is_qe: bool, tokenizer_name: str, model_name: str, batch_size: int,
                  max_input_length: int, bf16: bool, **kwargs):
         self.reference_free = validate_bool(is_qe)

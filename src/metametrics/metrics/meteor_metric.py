@@ -13,14 +13,14 @@ import psutil
 from typing import List, Union, Optional
 import numpy as np
 
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-class METEORMetric(BaseMetric):
+class METEORMetric(TextBaseMetric):
     def __init__(self, meteor_jar_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "meteor-1.5.jar"), **kwargs):
         """
         METEOR metric

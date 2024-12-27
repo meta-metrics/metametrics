@@ -12,6 +12,7 @@ from transformers import HfArgumentParser
 from metametrics.tasks.text import MetaMetricsText
 from metametrics.tasks.vision import MetaMetricsVision
 from metametrics.tasks.reward import MetaMetricsReward
+from metametrics.tasks.evaluation.wmt import evaluate_wmt23, evaluate_wmt24
 
 from metametrics.utils.logging import get_logger
 from metametrics.utils.loader import parse_dataset_args, resolve_path
@@ -29,6 +30,10 @@ class MainArguments:
     )
     output_dir: str = field(
         metadata={"help": "The output directory of the experiments."},
+    )
+    evaluation_method: Optional[str] = field(
+        default=None,
+        metadata={"help": "The evaluation method of the experiments."},
     )
     optimizer_config_path: str = field(
         metadata={"help": "YAML/JSON file that contains optimizer config to be used for MetaMetrics."},
@@ -65,6 +70,16 @@ class MainArguments:
         if os.path.exists(self.output_dir) and not self.overwrite_output_dir:
             raise FileExistsError(
                 f"The output directory '{self.output_dir}' already exists and `overwrite_output_dir` is set to False."
+            )
+            
+        if self.modality not in ["text", "vision", "reward"]:
+            raise NotImplementedError(
+                f"Modality of `{self.evaluation_method}` is not recognized!"
+            )
+            
+        if self.evaluation_method is not None and self.evaluation_method not in ["wmt23", "wmt24", "rewardbench"]:
+            raise NotImplementedError(
+                f"Evaluation method of `{self.evaluation_method}` is not recognized!"
             )
 
 def get_main_args(args: Optional[Dict[str, Any]] = None) -> MainArguments:
@@ -167,7 +182,9 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
     elif main_args.modality == "reward":
         task_pipeline = MetaMetricsReward()
     else:
-        raise NotImplementedError(f"Modality `{main_args.modality}` is not recognized!")
+        raise RuntimeError(
+            f"Invalid modality. This should've been checked earlier, unknown error!"
+        )
 
     # Add metrics
     for metric in metrics_list:
@@ -198,13 +215,15 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
     # Convert to DataFrame
     train_scores_df = pd.DataFrame(train_scores_dict)
     
+    # Calibrate
+    task_pipeline.calibrate(train_scores_df, dataset_dict["train"][consts.TARGET_SCORE])
+    train_pred = task_pipeline.predict_metametrics(train_scores_df)
+    train_scores_df[consts.METAMETRICS_SCORE] = train_pred
+    
     # Save train_scores_df
     os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
     train_scores_path = os.path.join(output_dir, "train_scores.csv")
     train_scores_df.to_csv(train_scores_path, index=False)
-
-    # Calibrate
-    task_pipeline.calibrate(train_scores_df, dataset_dict["train"][consts.TARGET_SCORE])
     
     # Evaluate task
     if "validation" in dataset_dict:
@@ -226,31 +245,36 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
         
         eval_scores_df = pd.DataFrame(eval_scores_dict)
         
-        # Save train_scores_df
+        eval_pred = task_pipeline.predict_metametrics(eval_scores_df)
+        eval_scores_df[consts.METAMETRICS_SCORE] = eval_pred
+        
+        # Save eval_scores_df
         os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
         eval_scores_path = os.path.join(output_dir, "eval_scores.csv")
         eval_scores_df.to_csv(eval_scores_path, index=False)
         
-        pred, result = task_pipeline.evaluate_metametrics(eval_scores_df, dataset_dict["validation"][consts.TARGET_SCORE])
-    
-        # Save predictions
-        pred_df = pd.DataFrame(pred, columns=["predictions"])
-        human_scores_df = pd.DataFrame(dataset_dict["validation"][consts.TARGET_SCORE], columns=["true_scores"])
-        pred_df = pd.concat([pred_df, human_scores_df], axis=1)
-        pred_path = os.path.join(output_dir, "pred_human_scores.csv")
-        pred_df.to_csv(pred_path, index=False)
-
-        # Save results
-        result_path = os.path.join(output_dir, "result.csv")
-        if isinstance(result, dict):
-            # Single dictionary
-            pd.DataFrame([result]).to_csv(result_path, index=False)
-        elif isinstance(result, list):
-            # List of dictionaries or simple values
-            if all(isinstance(r, dict) for r in result):
-                pd.DataFrame(result).to_csv(result_path, index=False)
+        # Evaluate differently
+        if main_args.evaluation_method is None:
+            result = task_pipeline.evaluate_metametrics(eval_pred, dataset_dict["validation"][consts.TARGET_SCORE])
+            # Save results
+            result_path = os.path.join(output_dir, "result.csv")
+            if isinstance(result, dict):
+                # Single dictionary
+                pd.DataFrame([result]).to_csv(result_path, index=False)
+            elif isinstance(result, list):
+                # List of dictionaries or simple values
+                if all(isinstance(r, dict) for r in result):
+                    pd.DataFrame(result).to_csv(result_path, index=False)
+                else:
+                    pd.DataFrame(result, columns=["result"]).to_csv(result_path, index=False)
             else:
-                pd.DataFrame(result, columns=["result"]).to_csv(result_path, index=False)
+                # Any other structure
+                pd.DataFrame([result], columns=["result"]).to_csv(result_path, index=False)
+        elif main_args.evaluation_method == "wmt23":
+            evaluate_wmt23(eval_scores_df, output_dir)
+        elif main_args.evaluation_method == "wmt24":
+            evaluate_wmt24(eval_scores_df, output_dir)
         else:
-            # Any other structure
-            pd.DataFrame([result], columns=["result"]).to_csv(result_path, index=False)
+            raise RuntimeError(
+                f"Invalid evaluation method. This should've been checked earlier, unknown error!"
+            )   

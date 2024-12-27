@@ -6,7 +6,7 @@ from comet import load_from_checkpoint
 from huggingface_hub import snapshot_download
 import numpy as np
 
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
@@ -14,7 +14,7 @@ from metametrics.utils.constants import HF_TOKEN
 
 logger = get_logger(__name__)
 
-class COMETMetric(BaseMetric):
+class COMETMetric(TextBaseMetric):
     def __init__(self, comet_model: str="Unbabel/XCOMET-XXL", batch_size: int=8, gpus: int=1,
                  reference_free: bool=False, hf_token: str=HF_TOKEN, **kwargs):
         # Choose model from the model hub

@@ -14,14 +14,14 @@ from nltk.corpus import stopwords
 import numpy as np
 from scipy import spatial
 
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-class ROUGEWEMetric(BaseMetric):
+class ROUGEWEMetric(TextBaseMetric):
     def __init__(self, n_gram=1, model_metric="f1", tokenize=False, **kwargs):
         self.n_gram = validate_int(n_gram, valid_min=1)
         self.model_metric = validate_argument_list(model_metric, ["precision", "recall", "f1"])

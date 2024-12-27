@@ -17,7 +17,7 @@ class BaseOptimizer(ABC):
     def predict(self, metrics_df):
         raise NotImplementedError()
 
-def reward_ranking_acc(y_test, y_pred):
+def reward_ranking_acc(y_pred, y_test):
     correct_count = 0
     total_pairs = 0
 
@@ -33,15 +33,19 @@ def reward_ranking_acc(y_test, y_pred):
     accuracy = correct_count / total_pairs
     return accuracy
 
-def kendall_tau(y_test, y_pred):
-    return stats.kendalltau(y_test, y_pred).statistic
+def kendall_tau(y_pred, y_test):
+    return stats.kendalltau(y_pred, y_test).statistic
 
-def pearson(y_test, y_pred):
-    return stats.pearsonr(y_test, y_pred).statistic
+def pearson(y_pred, y_test):
+    return stats.pearsonr(y_pred, y_test).statistic
+
+def spearman(y_pred, y_test):
+    return stats.spearmanr(y_pred, y_test).statistic
 
 OBJECTIVE_FN_MAP = {
     "kendall": kendall_tau,
     "pearson": pearson,
+    "spearman": spearman,
     "reward_ranking_acc": reward_ranking_acc,
 }
     

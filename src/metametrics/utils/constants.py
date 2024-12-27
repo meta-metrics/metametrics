@@ -19,6 +19,7 @@ TEXT_SRC = "text_src"
 TEXT_HYP = "text_hyp"
 TEXT_REF = "text_ref"
 IMG_SRC = "img_src"
+PROMPT = "prompt"
 CHOSEN = "chosen"
 REJECTED = "rejected"
 TARGET_SCORE = "target_score"
@@ -26,3 +27,5 @@ TARGET_SCORE = "target_score"
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 HF_TOKEN = os.getenv("HF_TOKEN")
 CACHE_DIR = None
+
+METAMETRICS_SCORE = "metametrics_score"

@@ -4,14 +4,14 @@ import numpy as np
 
 from bleurt import score
 
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-class BLEURT20Metric(BaseMetric):
+class BLEURT20Metric(TextBaseMetric):
     def __init__(self, agg_method: str="mean", **kwargs):
         # The paths
         self.agg_method = validate_argument_list(agg_method, ["mean", "max"])
