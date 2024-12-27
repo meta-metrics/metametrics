@@ -6,7 +6,7 @@ import numpy as np
 from typing import List, Dict, Union, Optional
 from tqdm import tqdm
 
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 from metametrics.utils.logging import get_logger
 
@@ -55,7 +55,7 @@ class YiSiModel(nn.Module):
 
         return weighted_pool_pred, weighted_pool_ref
 
-class YiSiMetric(BaseMetric):
+class YiSiMetric(TextBaseMetric):
     def __init__(self, model_name: str='bert-base-multilingual-cased', alpha: float=0.8, batch_size=64, max_input_length=512, device='cuda'):
         self.model_name = model_name
         self.alpha = validate_real(alpha, valid_min=0, valid_max=1)

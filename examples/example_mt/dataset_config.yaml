@@ -1,9 +1,19 @@
 ### Dataset
 dataset:
-  summeval:
-    hf_hub_url: meta-metrics/wmt24-mqm
+  wmt_train:
+    hf_hub_url: davidanugraha/wmt-mqm
+    subset: wmt2020-2022
     columns:
       src_text: src
-      hyp_text: hyp
+      hyp_text: mt
       ref_text: ref
-max_samples: 10
+      target_score: score
+eval_dataset:
+  wmt_train:
+    hf_hub_url: davidanugraha/wmt-mqm
+    subset: wmt2023
+    columns:
+      src_text: src
+      hyp_text: mt
+      ref_text: ref
+evaluation_method: wmt23

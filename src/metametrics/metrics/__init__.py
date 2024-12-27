@@ -1,4 +1,4 @@
-from metametrics.metrics.base_metric import BaseMetric, VisionToTextBaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric, VisionToTextBaseMetric
 
 from metametrics.metrics.bleu_metric import BLEUMetric
 from metametrics.metrics.bleurt20_metric import BLEURT20Metric
@@ -14,7 +14,7 @@ from metametrics.metrics.summaqa_metric import SummaQAMetric
 from metametrics.metrics.bart_score_metric import BARTScoreMetric
 
 __all__ = [
-    'BaseMetric', 'VisionToTextBaseMetric',
+    'TextBaseMetric', 'VisionToTextBaseMetric',
     'BLEUMetric', 'BLEURT20Metric', 'BERTScoreMetric', 'chrFMetric',
     'YiSiMetric', 'COMETMetric', 'MetricXMetric',
     'ROUGEMetric', 'ROUGEWEMetric',

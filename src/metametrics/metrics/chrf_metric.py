@@ -2,14 +2,14 @@ from evaluate import load
 from typing import List, Union, Optional
 import numpy as np
 
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-class chrFMetric(BaseMetric):
+class chrFMetric(TextBaseMetric):
     def __init__(self, word_order=2, eps_smoothing=True, **kwargs):
         self.word_order = validate_int(word_order, valid_min=1) # word_order == 2 means chrF++
         self.eps_smoothing = validate_bool(eps_smoothing)  # eps_smoothing means chrF++

@@ -5,14 +5,14 @@ import numpy as np
 
 from metametrics.metrics.GEMBA.gemba.gpt_api import GptApi
 from metametrics.metrics.GEMBA.gemba.gemba_mqm_utils import TEMPLATE_GEMBA_MQM, apply_template, parse_mqm_answer
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-class GEMBA_MQM_Metric(BaseMetric):
+class GEMBA_MQM_Metric(TextBaseMetric):
     """
         IMPORTANT!
             Before using GEMBA_MQM, go to the GEMBA/gemba submodule and edit the CREDENTIALS.py.

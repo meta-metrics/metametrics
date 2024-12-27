@@ -11,7 +11,7 @@ from transformers import BertTokenizer, BertForQuestionAnswering
 import spacy
 import numpy as np
 
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
@@ -48,7 +48,7 @@ class QA_Bert():
             probs.append(prob.item())
         return asws, probs
         
-class SummaQAMetric(BaseMetric):
+class SummaQAMetric(TextBaseMetric):
     def __init__(self, model_metric="f1", batch_size=8, max_seq_len=384, **kwargs):
         self.batch_size = validate_int(batch_size, valid_min=1)
         self.max_seq_len = validate_int(max_seq_len, valid_min=1)

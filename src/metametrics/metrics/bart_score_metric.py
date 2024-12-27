@@ -3,14 +3,14 @@ from typing import List, Union, Optional
 import numpy as np
 
 from metametrics.metrics.BARTScore.bart_score import BARTScorer
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-class BARTScoreMetric(BaseMetric):
+class BARTScoreMetric(TextBaseMetric):
     def __init__(self, model_checkpoint: str='facebook/bart-large-cnn', max_length: int=1024,
                  agg_method: str="max", batch_size: int=8, device: str='cuda:0', **kwargs):
         self.device = device

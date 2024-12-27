@@ -6,14 +6,14 @@ import shutil
 import numpy as np
 from pyrouge import Rouge155
 
-from metametrics.metrics.base_metric import BaseMetric
+from metametrics.metrics.base_metric import TextBaseMetric
 from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 from metametrics.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-class ROUGEMetric(BaseMetric):
+class ROUGEMetric(TextBaseMetric):
     def __init__(self, rouge_type="rouge1", rouge_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), "ROUGE-1.5.5"), **kwargs):
         if not os.path.isdir(rouge_dir) and not os.path.isdir(os.environ['ROUGE_HOME']):
             raise FileNotFoundError("ROUGE HOME is not found. Hint: do `pip install \".[rouge]\"`")

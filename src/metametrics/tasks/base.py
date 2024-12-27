@@ -42,8 +42,8 @@ class MetricManager:
     @classmethod
     def register_metric(self, metric_name, metric_class):
         """Registers a new metric to _registered_metrics."""
-        if not issubclass(metric_class, BaseMetric) and not issubclass(metric_class, VisionToTextBaseMetric):  # Ensure it inherits from BaseMetric or a similar base class
-            raise TypeError(f"Metric class `{metric_class}` must inherit from BaseMetric")
+        if not issubclass(metric_class, TextBaseMetric) and not issubclass(metric_class, VisionToTextBaseMetric):  # Ensure it inherits from TextBaseMetric or a similar base class
+            raise TypeError(f"Metric class `{metric_class}` must inherit from TextBaseMetric")
         self._registered_metrics[metric_name] = metric_class
 
     def add_metric(self, metric_name, metric_args):
@@ -122,4 +122,12 @@ class MetaMetrics(ABC):
     @abstractmethod
     def evaluate_metametrics(self, metrics_df, target_scores):
         raise NotImplementedError()
+    
+    @abstractmethod
+    def predict_metametrics(self, metrics_df):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def evaluate_metametrics(self, Y_pred, target_scores):
+        raise NotImplementedError() 
     
