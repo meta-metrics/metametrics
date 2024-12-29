@@ -71,10 +71,6 @@ class MainArguments:
         default=True,
         metadata={"help": "Whether to overwrite the directory of the experiments."},
     )
-    overwrite_cache: bool = field(
-        default=False,
-        metadata={"help": "Whether to overwrite the cache directory of the experiments."},
-    )
     
     def __post_init__(self):
         # Check if output_dir exists and if overwrite_output_dir is False
@@ -189,6 +185,7 @@ def run_evaluate_metametrics(main_args: MainArguments,
     
     eval_scores_df = pd.DataFrame(eval_scores_dict)
     
+    logger.info("Predicting metametrics for evaluation dataset!")
     eval_pred = task_pipeline.predict_metametrics(eval_scores_df)
     eval_scores_df[consts.METAMETRICS_SCORE] = eval_pred
     
@@ -296,6 +293,7 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
         train_scores_df = pd.DataFrame(train_scores_dict)
         
         # Calibrate
+        logger.info("Calibrate and predict metametrics based on train dataset!")
         task_pipeline.calibrate(train_scores_df, dataset_dict["train"])
         train_pred = task_pipeline.predict_metametrics(train_scores_df)
         train_scores_df[consts.METAMETRICS_SCORE] = train_pred
@@ -309,3 +307,9 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
         eval_dataset_path = os.path.join(output_dir, "eval_dataset.pkl")
         joblib.dump(dataset_dict["validation"], eval_dataset_path, compress=("gzip", 3))
         run_evaluate_metametrics(main_args, task_pipeline, dataset_dict["validation"])
+    
+    # Save task pipeline
+    task_pipeline_save_path = os.path.join(output_dir, "task_pipeline.pkl")
+    joblib.dump(task_pipeline, task_pipeline_save_path, compress=("gzip", 3))
+
+    logger.info("Finished running MetaMetrics!")

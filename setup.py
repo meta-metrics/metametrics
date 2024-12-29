@@ -22,9 +22,6 @@ extras_require = {
     
     # Regressor
     "xgboost": ["xgboost>=2.1.1", "scikit-optimize"],
-    
-    # Misc
-    "dev": ["pytest"],
 }
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -129,7 +126,7 @@ class CustomInstall(install):
 
 setup(
     name="metametrics",
-    version="0.0.1",
+    version="1.0.0",
     author="Genta Indra Winata",
     author_email="gentaindrawinata@gmail.com",
     description="MetaMetrics",

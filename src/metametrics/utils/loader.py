@@ -45,7 +45,7 @@ class DataArguments:
     """
     Arguments pertaining to what data we are going to input our model for training and evaluation.
     """
-    dataset: Optional[List[Dict[str, Any]]] = field(
+    train_dataset: Optional[List[Dict[str, Any]]] = field(
         default=None,
         metadata={"help": "A mapping of dataset name(s) and their arguments to use for training."},
     )
@@ -75,7 +75,7 @@ class DataArguments:
     )
 
     def __post_init__(self):
-        if self.dataset is None and self.val_size > 1e-6:
+        if self.train_dataset is None and self.val_size > 1e-6:
             raise ValueError("Cannot specify `val_size` if `dataset` is None.")
 
         if self.eval_dataset is not None and self.val_size > 1e-6:
@@ -209,7 +209,7 @@ def get_dataset(data_args: DataArguments) -> DatasetDict:
     Gets the train dataset and optionally gets the evaluation dataset.
     """
     # Load and preprocess dataset
-    dataset = merge_dataset(data_args.dataset, data_args)
+    dataset = merge_dataset(data_args.train_dataset, data_args)
     eval_dataset = merge_dataset(data_args.eval_dataset, data_args)
     
     dataset_dict = {}
@@ -241,8 +241,8 @@ def get_dataset_reward(data_args: DataArguments) -> DatasetDict:
     Gets the train dataset and optionally gets the evaluation dataset for reward modality.
     """
     dataset_dict = {}
-    if data_args.dataset is not None:
-        train_attrs = get_dataset_list(data_args.dataset)
+    if data_args.train_dataset is not None:
+        train_attrs = get_dataset_list(data_args.train_dataset)
         dataset_dict['train'] = _create_dataset_dict_for_reward(train_attrs, data_args.max_samples)
             
     if data_args.eval_dataset is not None:

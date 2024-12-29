@@ -1,5 +1,5 @@
 ### Dataset
-dataset:
+train_dataset:
   summeval:
     hf_hub_url: davidanugraha/SummEval
     columns:
