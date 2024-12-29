@@ -20,6 +20,10 @@ class TextBaseMetric(ABC):
     @property
     def max_val(self) -> Optional[float]:
         return None
+    
+    @property
+    def metric_name(self) -> str:
+        return ""
 
     @property
     @abstractmethod
@@ -55,6 +59,10 @@ class VisionToTextBaseMetric(ABC):
     @property
     def max_val(self) -> Optional[float]:
         return None
+    
+    @property
+    def metric_name(self) -> str:
+        return ""
 
     @property
     @abstractmethod
@@ -90,6 +98,10 @@ class RewardBaseMetric(ABC):
     @property
     def max_val(self) -> Optional[float]:
         return None
+    
+    @property
+    def metric_name(self) -> str:
+        return ""
 
     @property
     @abstractmethod
@@ -103,9 +115,9 @@ class RewardBaseMetric(ABC):
             torch.cuda.empty_cache()  # Free up GPU memory if used
         gc.collect()  # Collect any lingering garbage to free memory
 
-    def run_scoring(self, predictions: List[str], references: Union[None, List[List[str]]]=None, sources: Union[None, List[str]]=None) -> List[float]:
+    def run_scoring(self, dataset) -> List[float]:
         """Main method to score predictions and handle initialization and cleanup."""
-        result = self.score(predictions, references, sources)
+        result = self.score(dataset)
         self._cleanup()
         return result
     

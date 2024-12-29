@@ -1,0 +1,7 @@
+### Dataset
+dataset:
+  skywork:
+    hf_hub_url: natolambert/skywork-preferences-80k-v0.1-cleaned
+eval_dataset:
+  rewardbench:
+    hf_hub_url: allenai/reward-bench

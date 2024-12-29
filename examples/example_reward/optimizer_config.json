@@ -1,0 +1,6 @@
+{
+    "optimizer_name": "gp",
+    "optimizer_args": {
+        "objective_fn": "reward_ranking_acc"
+    }
+}

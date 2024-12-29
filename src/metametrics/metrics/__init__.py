@@ -35,3 +35,10 @@ try:
 except ImportError:
     # ClipScoreMetric not available, skipping import
     pass
+
+try:
+    from metametrics.metrics.rewardbench_model_metric import RewardBenchModelMetric
+    __all__.append('RewardBenchModelMetric')
+except ImportError:
+    # RewardBenchModelMetric not available, skipping import
+    pass

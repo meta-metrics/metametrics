@@ -8,14 +8,14 @@ from transformers import HfArgumentParser
 from metametrics.utils.logging import get_logger
 from metametrics.utils.constants import (
     DATASET_RANDOM_SEED, FILEEXT2TYPE, ROOT_DIR, CACHE_DIR, HF_TOKEN,
-    TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, CHOSEN, REJECTED, TARGET_SCORE
+    TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, TARGET_SCORE
 )
 
 logger = get_logger(__name__)
 
 @dataclass
 class DatasetAttr:
-    r"""
+    """
     Dataset attributes.
     """
     # basic configs
@@ -31,9 +31,6 @@ class DatasetAttr:
     text_ref: Optional[str] = TEXT_REF
     # vision columns
     img_src: Optional[str] = IMG_SRC
-    # reward columns
-    chosen: Optional[str] = CHOSEN
-    rejected: Optional[str] = REJECTED
     # target columns
     target_score: Optional[str] = TARGET_SCORE
 
@@ -45,7 +42,7 @@ class DatasetAttr:
 
 @dataclass
 class DataArguments:
-    r"""
+    """
     Arguments pertaining to what data we are going to input our model for training and evaluation.
     """
     dataset: Optional[List[Dict[str, Any]]] = field(
@@ -90,7 +87,7 @@ def resolve_path(curr_path):
     return curr_path
 
 def get_dataset_list(raw_dataset_attr_dict: Optional[Dict[str, Any]]) -> List[DatasetAttr]:
-    r"""
+    """
     Gets the attributes of the datasets.
     """
     dataset_list = []
@@ -107,7 +104,7 @@ def get_dataset_list(raw_dataset_attr_dict: Optional[Dict[str, Any]]) -> List[Da
         dataset_attr.set_attr("folder", raw_data_attr)
         
         # Set the colum names need to be retrieved
-        column_names = [TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, CHOSEN, REJECTED, TARGET_SCORE]
+        column_names = [TEXT_SRC, TEXT_HYP, TEXT_REF, IMG_SRC, TARGET_SCORE]
         for col in column_names:
             dataset_attr.set_attr(col, raw_data_attr.get('columns', {}))
 
@@ -116,7 +113,7 @@ def get_dataset_list(raw_dataset_attr_dict: Optional[Dict[str, Any]]) -> List[Da
     return dataset_list
 
 def _load_single_dataset(dataset_attr: DatasetAttr, data_args: DataArguments) -> Union[Dataset, IterableDataset]:
-    r"""
+    """
     Loads a single dataset and aligns it to the standard format.
     """
     logger.info("Loading dataset {}...".format(dataset_attr))
@@ -163,8 +160,6 @@ def _load_single_dataset(dataset_attr: DatasetAttr, data_args: DataArguments) ->
         TEXT_HYP: getattr(dataset_attr, TEXT_HYP, None),
         TEXT_REF: getattr(dataset_attr, TEXT_REF, None),
         IMG_SRC: getattr(dataset_attr, IMG_SRC, None),
-        CHOSEN: getattr(dataset_attr, CHOSEN, None),
-        REJECTED: getattr(dataset_attr, REJECTED, None),
         TARGET_SCORE: getattr(dataset_attr, TARGET_SCORE, None),
     }
 
@@ -184,7 +179,7 @@ def _load_single_dataset(dataset_attr: DatasetAttr, data_args: DataArguments) ->
     return dataset
 
 def merge_dataset(raw_dataset_attr_dict: Optional[Dict[str, Any]], data_args: DataArguments) -> Optional[Union[Dataset, IterableDataset]]:
-    r"""
+    """
     Gets the merged datasets in the standard format.
     """
     if raw_dataset_attr_dict is None:
@@ -200,7 +195,7 @@ def merge_dataset(raw_dataset_attr_dict: Optional[Dict[str, Any]], data_args: Da
         return concatenate_datasets(datasets)
     
 def split_dataset(dataset: Union[Dataset, IterableDataset], val_size: float, seed: int=DATASET_RANDOM_SEED) -> DatasetDict:
-    r"""
+    """
     Splits the dataset and returns a dataset dict containing train set and validation set.
 
     Supports both map dataset and iterable dataset.
@@ -210,7 +205,7 @@ def split_dataset(dataset: Union[Dataset, IterableDataset], val_size: float, see
     return DatasetDict({"train": dataset["train"], "validation": dataset["test"]})
 
 def get_dataset(data_args: DataArguments) -> DatasetDict:
-    r"""
+    """
     Gets the train dataset and optionally gets the evaluation dataset.
     """
     # Load and preprocess dataset
@@ -231,14 +226,37 @@ def get_dataset(data_args: DataArguments) -> DatasetDict:
 
     return dataset_dict
 
-def preprocess_dataset_based_on_modality(dataset_dict: DatasetDict, data_args: DataArguments, modality: str):
+def _create_dataset_dict_for_reward(attrs_list: List[DatasetAttr], max_samples: Optional[int]) -> Dataset:
+    """
+    Creates a Dataset object from a list of DatasetAttr objects.
+    """
+    return Dataset.from_dict({
+        "dataset_name": [attr.dataset_name for attr in attrs_list],
+        "split": [attr.split for attr in attrs_list],
+        "max_samples": [max_samples] * len(attrs_list),
+    })
+
+def get_dataset_reward(data_args: DataArguments) -> DatasetDict:
+    """
+    Gets the train dataset and optionally gets the evaluation dataset for reward modality.
+    """
+    dataset_dict = {}
+    if data_args.dataset is not None:
+        train_attrs = get_dataset_list(data_args.dataset)
+        dataset_dict['train'] = _create_dataset_dict_for_reward(train_attrs, data_args.max_samples)
+            
+    if data_args.eval_dataset is not None:
+        eval_attrs = get_dataset_list(data_args.eval_dataset)
+        dataset_dict['validation'] = _create_dataset_dict_for_reward(eval_attrs, data_args.max_samples)
+    
+    return DatasetDict(dataset_dict)
+
+def preprocess_dataset_based_on_modality(dataset_dict: DatasetDict, modality: str) -> DatasetDict:
     modality_columns = []
     if modality == "text":
         modality_columns = [TEXT_SRC, TEXT_HYP, TEXT_REF, TARGET_SCORE]
     elif modality == "vision":
         modality_columns = [IMG_SRC, TEXT_SRC, TEXT_HYP, TEXT_REF, TARGET_SCORE]
-    elif modality == "reward":
-        modality_columns = [CHOSEN, REJECTED, TARGET_SCORE]
     else:
         raise NotImplementedError(f"Modality `{modality}` is not recognized!")
     
@@ -261,6 +279,9 @@ def parse_dataset_args(dataset_config_path: str, modality: str) -> DatasetDict:
         logger.error("Got invalid dataset config path: {}".format(dataset_config_path))
         raise ValueError("dataset config path should be either JSON or YAML but got {} instead".format(dataset_config_path))
 
-    dataset_dict = get_dataset(parsed_data_args)
-    
-    return preprocess_dataset_based_on_modality(dataset_dict, parsed_data_args, modality)
+    if modality == "reward":
+        # Maybe in the future need to think of better way to refactor
+        return get_dataset_reward(parsed_data_args)
+    else:
+        dataset_dict = get_dataset(parsed_data_args)
+        return preprocess_dataset_based_on_modality(dataset_dict, modality)
