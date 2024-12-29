@@ -1,8 +1,9 @@
 ### method
 modality: reward
 normalize_metrics: true
-output_dir: "examples/example_reward/saves"
+output_dir: examples/example_reward/saves
 overwrite_output_dir: true
+evaluation_method: rewardbench
 
 ### Config path
 optimizer_config_path: examples/example_reward/optimizer_config.json

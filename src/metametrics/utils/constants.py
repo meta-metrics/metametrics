@@ -1,6 +1,6 @@
 import os
 
-VERSION = "0.0.1"
+VERSION = "1.0.0"
 
 DATASET_RANDOM_SEED = 1
 MODEL_RANDOM_SEED = 1

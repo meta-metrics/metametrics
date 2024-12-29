@@ -3,6 +3,7 @@ modality: text
 normalize_metrics: true
 output_dir: "saves/example_mt"
 overwrite_output_dir: true
+evaluation_method: wmt23
 
 ### Config path
 optimizer_config_path: examples/example_mt/optimizer_config.json

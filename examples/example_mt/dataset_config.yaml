@@ -1,5 +1,5 @@
 ### Dataset
-dataset:
+train_dataset:
   wmt_train:
     hf_hub_url: davidanugraha/wmt-mqm
     subset: wmt2020-2022
@@ -16,4 +16,3 @@ eval_dataset:
       src_text: src
       hyp_text: mt
       ref_text: ref
-evaluation_method: wmt23

@@ -1,5 +1,5 @@
 ### Dataset
-dataset:
+train_dataset:
   skywork:
     hf_hub_url: natolambert/skywork-preferences-80k-v0.1-cleaned
 eval_dataset:

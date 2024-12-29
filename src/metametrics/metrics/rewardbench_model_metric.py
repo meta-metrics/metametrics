@@ -14,12 +14,9 @@
 
 # Run RewardBench (evaluate any reward model on any dataet)
 
-import json
-import os
 from dataclasses import dataclass
 from typing import Dict, Optional, Any, List
 
-import numpy as np
 import torch
 import wandb
 from accelerate import Accelerator
@@ -34,9 +31,8 @@ from rewardbench import (
 )
 
 from metametrics.metrics.base_metric import RewardBaseMetric
-from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
-
 from metametrics.utils.logging import get_logger
+from metametrics.utils.validate import validate_argument_list, validate_int, validate_real, validate_bool
 
 logger = get_logger(__name__)
 
