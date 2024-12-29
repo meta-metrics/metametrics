@@ -35,6 +35,12 @@ class MetricManager:
         _registered_metrics["clipscore"] = ClipScoreMetric
     except ImportError:
         pass
+    
+    try:
+        from metametrics.metrics.rewardbench_model_metric import RewardBenchModelMetric
+        _registered_metrics["rewardbench_model_metric"] = RewardBenchModelMetric
+    except ImportError:
+        pass
 
     def __init__(self):
         self.list_metrics = []
@@ -51,7 +57,9 @@ class MetricManager:
         metric_class = self._registered_metrics.get(metric_name)
         if metric_class is None:
             raise ValueError(f"Metric name '{metric_name}' is not recognized!")
-        self.list_metrics.append(metric_class(**metric_args))
+        initialized_metric = metric_class(**metric_args)
+        setattr(initialized_metric, 'metric_name', metric_name)
+        self.list_metrics.append(initialized_metric)
         
     def __iter__(self):
         return iter(self.list_metrics)
@@ -92,6 +100,11 @@ class MetaMetrics(ABC):
         """Add metric to MetaMetrics"""
         raise NotImplementedError()
     
+    @abstractmethod
+    def get_metrics(self):
+        """Get metrics of MetaMetrics"""
+        raise NotImplementedError()
+    
     @classmethod
     def register_optimizer(self, optimizer_name, optimizer_class):
         """Registers a new optimizer in the _registered_optimizers."""
@@ -129,5 +142,5 @@ class MetaMetrics(ABC):
 
     @abstractmethod
     def evaluate_metametrics(self, Y_pred, target_scores):
-        raise NotImplementedError() 
+        raise NotImplementedError()
     

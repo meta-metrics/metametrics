@@ -1,5 +1,5 @@
 import os
-import pickle
+import joblib
 import sys
 import json
 import yaml
@@ -8,11 +8,14 @@ from typing import Any, Dict, Optional
 import pandas as pd
 from dataclasses import dataclass, field
 from transformers import HfArgumentParser
+from datasets import Dataset
 
+from metametrics.tasks.base import MetaMetrics
 from metametrics.tasks.text import MetaMetricsText
 from metametrics.tasks.vision import MetaMetricsVision
 from metametrics.tasks.reward import MetaMetricsReward
-from metametrics.tasks.evaluation.wmt import evaluate_wmt23, evaluate_wmt24
+from metametrics.tasks.evaluation.wmt_eval import evaluate_wmt23, evaluate_wmt24
+from metametrics.tasks.evaluation.rewardbench_eval import evaluate_rewardbench
 
 from metametrics.utils.logging import get_logger
 from metametrics.utils.loader import parse_dataset_args, resolve_path
@@ -35,6 +38,14 @@ class MainArguments:
         default=None,
         metadata={"help": "The evaluation method of the experiments."},
     )
+    evaluation_only: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether to do only evaluation using an optimized MetaMetrics. Must provide optimizer_load_path if this is set to be True."},
+    )
+    pipeline_load_path: Optional[str] = field(
+        default=None,
+        metadata={"help": "Object file that contains pipeline to be used for MetaMetrics. Only use this if evaluation_only is True."},
+    )
     optimizer_config_path: str = field(
         metadata={"help": "YAML/JSON file that contains optimizer config to be used for MetaMetrics."},
     )
@@ -54,7 +65,7 @@ class MainArguments:
     )
     normalize_metrics: bool = field(
         default=True,
-        metadata={"help": "Normalize metrics used for MetaMetrics."},
+        metadata={"help": "Whether to normalize metrics used for MetaMetrics."},
     )
     overwrite_output_dir: bool = field(
         default=True,
@@ -81,6 +92,12 @@ class MainArguments:
             raise NotImplementedError(
                 f"Evaluation method of `{self.evaluation_method}` is not recognized!"
             )
+            
+        if self.evaluation_only == True and self.optimizer_load_path is None:
+            raise ValueError(
+                f"Evaluation only is set to be True, but optimizer_load_path is not provided!"
+            )
+            
 
 def get_main_args(args: Optional[Dict[str, Any]] = None) -> MainArguments:
     parser = HfArgumentParser(MainArguments)
@@ -145,6 +162,69 @@ def parse_metrics_dict(metrics_config_path: str):
         logger.error("Got invalid config path: {}".format(metrics_config_path))
         raise ValueError("Config path should be either JSON or YAML but got {} instead".format(metrics_config_path))
 
+def run_evaluate_metametrics(main_args: MainArguments,
+                             task_pipeline: MetaMetrics,
+                             eval_dataset: Dataset
+                            ) -> None:
+    # Initialize some variables
+    normalize_metrics = main_args.normalize_metrics
+    output_dir = resolve_path(main_args.output_dir)
+    
+    # Evaluate task
+    logger.info("Evaluating metrics for validation dataset!")
+    eval_metric_scores = task_pipeline.evaluate_metrics(eval_dataset, normalize_metrics)
+    
+    # Repeat the process for validation scores with unique names
+    eval_scores_dict = {}
+    unique_names = {}
+    for name, scores in zip([metric.metric_name for metric in task_pipeline.get_metrics()], eval_metric_scores):
+        if name in unique_names:
+            unique_name = f"{name}_{unique_names[name]}"
+        else:
+            unique_name = name
+            unique_names[name] = 1
+            
+        unique_names[name] += 1
+        eval_scores_dict[unique_name] = scores
+    
+    eval_scores_df = pd.DataFrame(eval_scores_dict)
+    
+    eval_pred = task_pipeline.predict_metametrics(eval_scores_df)
+    eval_scores_df[consts.METAMETRICS_SCORE] = eval_pred
+    
+    # Save eval_scores_df
+    os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
+    eval_scores_path = os.path.join(output_dir, "eval_scores.csv")
+    eval_scores_df.to_csv(eval_scores_path, index=False)
+    
+    # Evaluate differently
+    if main_args.evaluation_method is None:
+        result = task_pipeline.evaluate_metametrics(eval_pred, eval_dataset[consts.TARGET_SCORE])
+        # Save results
+        result_path = os.path.join(output_dir, "result.csv")
+        if isinstance(result, dict):
+            # Single dictionary
+            pd.DataFrame([result]).to_csv(result_path, index=False)
+        elif isinstance(result, list):
+            # List of dictionaries or simple values
+            if all(isinstance(r, dict) for r in result):
+                pd.DataFrame(result).to_csv(result_path, index=False)
+            else:
+                pd.DataFrame(result, columns=["result"]).to_csv(result_path, index=False)
+        else:
+            # Any other structure
+            pd.DataFrame([result], columns=["result"]).to_csv(result_path, index=False)
+    elif main_args.evaluation_method == "wmt23":
+        evaluate_wmt23(eval_scores_df, output_dir)
+    elif main_args.evaluation_method == "wmt24":
+        evaluate_wmt24(eval_scores_df, output_dir)
+    elif main_args.evaluation_method == "rewardbench":
+        evaluate_rewardbench(eval_scores_df, output_dir)
+    else:
+        raise RuntimeError(
+            f"Invalid evaluation method. This should've been checked earlier, unknown error!"
+        )
+
 def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
     main_args = get_main_args(args)
     
@@ -154,127 +234,78 @@ def run_metametrics(args: Optional[Dict[str, Any]] = None) -> None:
 
     if main_args.cache_dir:
         consts.CACHE_DIR = main_args.cache_dir
-        
-    # Parse config files
-    optimizer = parse_optimizer(main_args.optimizer_config_path)
+    
+    task_pipeline = None
     dataset_dict = parse_dataset_args(main_args.dataset_config_path, modality=main_args.modality)
-    metrics_list = parse_metrics_dict(main_args.metrics_config_path)
-    normalize_metrics = main_args.normalize_metrics
     output_dir = resolve_path(main_args.output_dir)
-    
-    # Save train dataset
-    os.makedirs(output_dir, exist_ok=True)
-    train_dataset_path = os.path.join(output_dir, "train_dataset.pkl")
-    with open(train_dataset_path, "wb") as f:
-        pickle.dump(dataset_dict["train"], f)
-
-    # Save eval/validation dataset (if it exists)
-    if "validation" in dataset_dict:
-        eval_dataset_path = os.path.join(output_dir, "eval_dataset.pkl")
-        with open(eval_dataset_path, "wb") as f:
-            pickle.dump(dataset_dict["validation"], f)
-
-    # Initialize pipeline
-    if main_args.modality == "text":
-        task_pipeline = MetaMetricsText()
-    elif main_args.modality == "vision":
-        task_pipeline = MetaMetricsVision()
-    elif main_args.modality == "reward":
-        task_pipeline = MetaMetricsReward()
+    if main_args.evaluation_only:
+        try:
+            task_pipeline = joblib.load(open(main_args.pipeline_load_path, "rb"))
+        except (FileNotFoundError, EOFError, ValueError) as e:
+            raise RuntimeError(f"Failed to load pipeline: {e}")
     else:
-        raise RuntimeError(
-            f"Invalid modality. This should've been checked earlier, unknown error!"
-        )
+        # Parse config files
+        optimizer = parse_optimizer(main_args.optimizer_config_path)
+        metrics_list = parse_metrics_dict(main_args.metrics_config_path)
+        normalize_metrics = main_args.normalize_metrics
 
-    # Add metrics
-    for metric in metrics_list:
-        task_pipeline.add_metric(metric.get("metric_name"), metric.get("metric_args"))
-    
-    # Set optimizer
-    task_pipeline.set_optimizer(optimizer.get("optimizer_name"), optimizer.get("optimizer_args"))
-    
-    # Evaluate train metrics
-    logger.info("Evaluating metrics for train dataset!")
-    train_metric_scores = task_pipeline.evaluate_metrics(dataset_dict["train"], normalize_metrics)
-    
-    # Create unique metric names for the DataFrame
-    unique_names = {}
-    train_scores_dict = {}
-    
-    for name, scores in zip([metric["metric_name"] for metric in metrics_list], train_metric_scores):
-        # Create a unique name if duplicate
-        if name in unique_names:
-            unique_name = f"{name}_{unique_names[name]}"
+        # Initialize pipeline
+        if main_args.modality == "text":
+            task_pipeline = MetaMetricsText()
+        elif main_args.modality == "vision":
+            task_pipeline = MetaMetricsVision()
+        elif main_args.modality == "reward":
+            task_pipeline = MetaMetricsReward()
         else:
-            unique_name = name
-            unique_names[name] = 1
+            raise RuntimeError(
+                f"Invalid modality. This should've been checked earlier, unknown error!"
+            )
 
-        unique_names[name] += 1
-        train_scores_dict[unique_name] = scores
+        # Add metrics
+        for metric in metrics_list:
+            task_pipeline.add_metric(metric.get("metric_name"), metric.get("metric_args"))
         
-    # Convert to DataFrame
-    train_scores_df = pd.DataFrame(train_scores_dict)
-    
-    # Calibrate
-    task_pipeline.calibrate(train_scores_df, dataset_dict["train"][consts.TARGET_SCORE])
-    train_pred = task_pipeline.predict_metametrics(train_scores_df)
-    train_scores_df[consts.METAMETRICS_SCORE] = train_pred
-    
-    # Save train_scores_df
-    os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
-    train_scores_path = os.path.join(output_dir, "train_scores.csv")
-    train_scores_df.to_csv(train_scores_path, index=False)
-    
-    # Evaluate task
-    if "validation" in dataset_dict:
-        logger.info("Evaluating metrics for validation dataset!")
-        eval_metric_scores = task_pipeline.evaluate_metrics(dataset_dict["validation"], normalize_metrics)
+        # Set optimizer
+        task_pipeline.set_optimizer(optimizer.get("optimizer_name"), optimizer.get("optimizer_args"))
         
-        # Repeat the process for validation scores with unique names
-        eval_scores_dict = {}
-        unique_names.clear()  # Reset the counter for validation
-        for name, scores in zip([m["metric_name"] for m in metrics_list], eval_metric_scores):
+        # Save train dataset
+        os.makedirs(output_dir, exist_ok=True)
+        train_dataset_path = os.path.join(output_dir, "train_dataset.pkl")
+        joblib.dump(dataset_dict["train"], train_dataset_path, compress=("gzip", 3))
+        
+        # Evaluate train metrics
+        logger.info("Evaluating metrics for train dataset!")
+        train_metric_scores = task_pipeline.evaluate_metrics(dataset_dict["train"], normalize_metrics)
+        
+        # Create unique metric names for the DataFrame
+        unique_names = {}
+        train_scores_dict = {}
+        
+        for name, scores in zip([metric.metric_name for metric in task_pipeline.get_metrics()], train_metric_scores):
+            # Create a unique name if duplicate
             if name in unique_names:
                 unique_name = f"{name}_{unique_names[name]}"
             else:
                 unique_name = name
                 unique_names[name] = 1
-                
+
             unique_names[name] += 1
-            eval_scores_dict[unique_name] = scores
+            train_scores_dict[unique_name] = scores
+            
+        # Convert to DataFrame
+        train_scores_df = pd.DataFrame(train_scores_dict)
         
-        eval_scores_df = pd.DataFrame(eval_scores_dict)
+        # Calibrate
+        task_pipeline.calibrate(train_scores_df, dataset_dict["train"])
+        train_pred = task_pipeline.predict_metametrics(train_scores_df)
+        train_scores_df[consts.METAMETRICS_SCORE] = train_pred
         
-        eval_pred = task_pipeline.predict_metametrics(eval_scores_df)
-        eval_scores_df[consts.METAMETRICS_SCORE] = eval_pred
-        
-        # Save eval_scores_df
+        # Save train_scores_df
         os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
-        eval_scores_path = os.path.join(output_dir, "eval_scores.csv")
-        eval_scores_df.to_csv(eval_scores_path, index=False)
-        
-        # Evaluate differently
-        if main_args.evaluation_method is None:
-            result = task_pipeline.evaluate_metametrics(eval_pred, dataset_dict["validation"][consts.TARGET_SCORE])
-            # Save results
-            result_path = os.path.join(output_dir, "result.csv")
-            if isinstance(result, dict):
-                # Single dictionary
-                pd.DataFrame([result]).to_csv(result_path, index=False)
-            elif isinstance(result, list):
-                # List of dictionaries or simple values
-                if all(isinstance(r, dict) for r in result):
-                    pd.DataFrame(result).to_csv(result_path, index=False)
-                else:
-                    pd.DataFrame(result, columns=["result"]).to_csv(result_path, index=False)
-            else:
-                # Any other structure
-                pd.DataFrame([result], columns=["result"]).to_csv(result_path, index=False)
-        elif main_args.evaluation_method == "wmt23":
-            evaluate_wmt23(eval_scores_df, output_dir)
-        elif main_args.evaluation_method == "wmt24":
-            evaluate_wmt24(eval_scores_df, output_dir)
-        else:
-            raise RuntimeError(
-                f"Invalid evaluation method. This should've been checked earlier, unknown error!"
-            )   
+        train_scores_path = os.path.join(output_dir, "train_scores.csv")
+        train_scores_df.to_csv(train_scores_path, index=False)
+    
+    if "validation" in dataset_dict:
+        eval_dataset_path = os.path.join(output_dir, "eval_dataset.pkl")
+        joblib.dump(dataset_dict["validation"], eval_dataset_path, compress=("gzip", 3))
+        run_evaluate_metametrics(main_args, task_pipeline, dataset_dict["validation"])

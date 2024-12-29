@@ -10,7 +10,7 @@ from metametrics.optimizer import *
 from metametrics.metrics import *
 
 from metametrics.utils.logging import get_logger
-from metametrics.utils.constants import TEXT_HYP, TEXT_REF, TEXT_SRC, IMG_SRC
+from metametrics.utils.constants import TEXT_HYP, TEXT_REF, TEXT_SRC, IMG_SRC, TARGET_SCORE
 
 logger = get_logger(__name__)
 
@@ -22,6 +22,9 @@ class MetaMetricsVision(MetaMetrics):
     
     def add_metric(self, metric_name: str, metric_args: Dict[str, Any]):
         self.metric_manager.add_metric(metric_name, metric_args)
+        
+    def get_metrics(self):
+        return iter(self.metric_manager)
         
     def set_optimizer(self, optimizer_name: str, optimizer_args: Dict[str, Any]):
         self.optimizer = super().get_optimizer(optimizer_name, optimizer_args)
@@ -48,8 +51,8 @@ class MetaMetricsVision(MetaMetrics):
         
         return all_metric_scores
         
-    def calibrate(self, metrics_df, target_scores):
-        self.optimizer.calibrate(metrics_df, target_scores)
+    def calibrate(self, metrics_df, dataset):
+        self.optimizer.calibrate(metrics_df, dataset[TARGET_SCORE])
         self.need_calibrate = False
     
     def predict_metametrics(self, metrics_df):

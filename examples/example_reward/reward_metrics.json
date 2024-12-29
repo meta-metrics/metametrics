@@ -1,0 +1,74 @@
+[
+    {
+        "metric_name": "rewardbench_model_metric",
+        "metric_args": {
+            "model": "internlm/internlm2-1_8b-reward",
+            "trust_remote_code": true,
+            "batch_size": 4
+        }
+    },
+    {
+        "metric_name": "rewardbench_model_metric",
+        "metric_args": {
+            "model": "internlm/internlm2-7b-reward",
+            "trust_remote_code": true,
+            "batch_size": 4
+        }
+    },
+    {
+        "metric_name": "rewardbench_model_metric",
+        "metric_args": {
+            "model": "Ray2333/GRM-Gemma-2B-rewardmodel-ft",
+            "trust_remote_code": true,
+            "batch_size": 4
+        }
+    },
+    {
+        "metric_name": "rewardbench_model_metric",
+        "metric_args": {
+            "model": "Ray2333/GRM-Llama3-8B-rewardmodel-ft",
+            "trust_remote_code": true,
+            "batch_size": 4
+        }
+    },
+    {
+        "metric_name": "rewardbench_model_metric",
+        "metric_args": {
+            "model": "LxzGordon/URM-LLaMa-3.1-8B",
+            "trust_remote_code": true,
+            "batch_size": 4
+        }
+    },
+    {
+        "metric_name": "rewardbench_model_metric",
+        "metric_args": {
+            "model": "LxzGordon/URM-LLaMa-3-8B",
+            "trust_remote_code": true,
+            "batch_size": 4
+        }
+    },
+    {
+        "metric_name": "rewardbench_model_metric",
+        "metric_args": {
+            "model": "weqweasdas/RM-Mistral-7B",
+            "trust_remote_code": true,
+            "batch_size": 4
+        }
+    },
+    {
+        "metric_name": "rewardbench_model_metric",
+        "metric_args": {
+            "model": "Skywork/Skywork-Reward-Llama-3.1-8B",
+            "trust_remote_code": true,
+            "batch_size": 4
+        }
+    },
+    {
+        "metric_name": "rewardbench_model_metric",
+        "metric_args": {
+            "model": "sfairXC/FsfairX-LLaMA3-RM-v0.1",
+            "trust_remote_code": true,
+            "batch_size": 4
+        }
+    }
+]
