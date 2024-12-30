@@ -1,11 +1,11 @@
 ### method
 modality: text
 normalize_metrics: true
-output_dir: "saves/example_mt"
+output_dir: examples/example_mt/saves
 overwrite_output_dir: true
 evaluation_method: wmt23
 
 ### Config path
 optimizer_config_path: examples/example_mt/optimizer_config.json
-metrics_config_path: examples/example_mt/text_metrics.json
+metrics_config_path: examples/example_mt/mt_metrics.json
 dataset_config_path: examples/example_mt/dataset_config.yaml

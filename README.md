@@ -15,8 +15,8 @@ Python 3.10 or higher. Details of dependencies are in `setup.py`.
 
 ## Setup Instruction
 
-1. Run `pip install .` as it will automatically install required dependencies.
-2. Optionally, you may install additional dependencies by running `pip install ".[<additional_dependencies>]"`.
+1. Run `pip install -e .` as it will automatically install required dependencies.
+2. Optionally, you may install additional dependencies by running `pip install -e ".[<additional_dependencies>]"`.
 Replace `<additional_dependencies>` with one (or more) of the following based on your needs:
 - "wmt-eval": For WMT tasks.
 - "rewardbench": For RewardBench tasks.

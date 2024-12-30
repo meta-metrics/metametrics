@@ -23,7 +23,11 @@ class TextBaseMetric(ABC):
     
     @property
     def metric_name(self) -> str:
-        return ""
+        return getattr(self, "_metric_name", "")
+    
+    @metric_name.setter
+    def metric_name(self, value):
+        self._metric_name = value
 
     @property
     @abstractmethod
@@ -62,7 +66,11 @@ class VisionToTextBaseMetric(ABC):
     
     @property
     def metric_name(self) -> str:
-        return ""
+        return getattr(self, "_metric_name", "")
+    
+    @metric_name.setter
+    def metric_name(self, value):
+        self._metric_name = value
 
     @property
     @abstractmethod
@@ -101,7 +109,11 @@ class RewardBaseMetric(ABC):
     
     @property
     def metric_name(self) -> str:
-        return ""
+        return getattr(self, "_metric_name", "")
+    
+    @metric_name.setter
+    def metric_name(self, value):
+        self._metric_name = value
 
     @property
     @abstractmethod

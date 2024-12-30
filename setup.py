@@ -48,10 +48,12 @@ class CustomInstall(install):
         os.system("git submodule update")
         
         # Run custom post-installation
-        self.install_metric_bleurt()
-        self.install_metric_rouge()
-        self.install_metric_meteor()
-        # self.install_spacy()
+        CustomInstall.install_metric_bleurt()
+        CustomInstall.install_metric_rouge()
+        CustomInstall.install_metric_meteor()
+        
+        # Avoids crashing after build packages are installed
+        os.chdir(CustomInstall.root_dir)     
     
     @staticmethod
     def install_metric_bleurt():   
@@ -118,11 +120,6 @@ class CustomInstall(install):
         with open(os.path.join(metrics_dir, "meteor-1.5.jar"), "wb") as f:
             f.write(response.content)
         logging.info("METEOR installed successfully.")
-    
-    @staticmethod
-    def install_spacy():
-        # Install spacy for SummaQA (Installing together with the rest seems to ruin dependencies)
-        subprocess.run("pip install spacy", shell=True, check=True, text=True, capture_output=True)
 
 setup(
     name="metametrics",

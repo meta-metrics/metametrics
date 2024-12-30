@@ -1,3 +1,3 @@
 #!/bin/bash
 
-metametrics-cli examples/example_reward/reward_gp_metrics.yaml
+metametrics-cli run examples/example_reward/reward_gp_metrics.yaml

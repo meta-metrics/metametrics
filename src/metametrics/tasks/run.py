@@ -34,6 +34,15 @@ class MainArguments:
     output_dir: str = field(
         metadata={"help": "The output directory of the experiments."},
     )
+    optimizer_config_path: str = field(
+        metadata={"help": "YAML/JSON file that contains optimizer config to be used for MetaMetrics."},
+    )
+    metrics_config_path: str = field(
+        metadata={"help": "YAML/JSON file that contains list of metrics to be used for MetaMetrics."},
+    )
+    dataset_config_path: str = field(
+        metadata={"help": "YAML/JSON file that contains dataset config to be used for MetaMetrics."},
+    )
     evaluation_method: Optional[str] = field(
         default=None,
         metadata={"help": "The evaluation method of the experiments."},
@@ -45,15 +54,6 @@ class MainArguments:
     pipeline_load_path: Optional[str] = field(
         default=None,
         metadata={"help": "Object file that contains pipeline to be used for MetaMetrics. Only use this if evaluation_only is True."},
-    )
-    optimizer_config_path: str = field(
-        metadata={"help": "YAML/JSON file that contains optimizer config to be used for MetaMetrics."},
-    )
-    metrics_config_path: str = field(
-        metadata={"help": "YAML/JSON file that contains list of metrics to be used for MetaMetrics."},
-    )
-    dataset_config_path: str = field(
-        metadata={"help": "YAML/JSON file that contains dataset config to be used for MetaMetrics."},
     )
     hf_hub_token: Optional[str] = field(
         default=None,
