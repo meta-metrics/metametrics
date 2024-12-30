@@ -5,10 +5,6 @@ from tqdm import tqdm
 from metametrics.utils.logging import get_logger
 from metametrics.utils.constants import METAMETRICS_SCORE
 
-from mt_metrics_eval import meta_info
-from mt_metrics_eval import data
-from mt_metrics_eval import tasks
-
 logger = get_logger(__name__)
 
 WMT23_LPS = ['en-de', 'he-en', 'zh-en']
@@ -54,6 +50,10 @@ def NewMetric(score_df, src: list[str], ref: list[str], hyps: dict[list[str]]) -
     return segment_scores, system_scores
 
 def evaluate_wmt23(score_df, output_path, **kwargs):
+    from mt_metrics_eval import meta_info
+    from mt_metrics_eval import data
+    from mt_metrics_eval import tasks
+
     evs_dict = {('wmt23', lp): data.EvalSet('wmt23', lp, True) for lp in WMT23_LPS}
     
     for lp in WMT23_LPS:
